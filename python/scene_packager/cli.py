@@ -50,7 +50,8 @@ def _load_config_override(path=None):
 
 
 def _init_backup_config():
-    """Make backup copies of originals, with `_` prefix
+    """
+    Make backup copies of originals, with `_` prefix
     Useful for augmenting an existing value with your own config
     """
 
@@ -85,7 +86,7 @@ def main():
 
     parser_run.add_argument(
         "-s", "--scene", dest="input_scene", type=str, required=True,
-        help(
+        help=(
             "Either 1. Filepath of scene to package, or 2. Directory to search "
             "for scenes to package. If a directory is provided, finds and "
             "lists scenes that can be packaged. If -s is used with --ui mode, "
@@ -96,7 +97,7 @@ def main():
     # UI mode
     parser_run.add_argument(
         "--ui", dest="ui", action="store_true",
-        help("Launch Scene Packager ui.")
+        help=("Launch Scene Packager ui.")
     )
 
     # Packager overrides
@@ -105,20 +106,20 @@ def main():
     ))
     parser_run.add_argument(
         "-r", "--package-root", dest="package_root", type=str,
-        help("Target root directory for this package. "
-             "Overrides config.package_root() function.")
+        help=("Target root directory for this package. "
+              "Overrides config.package_root() function.")
     )
 
     # Extra files
     parser_run.add_argument(
         "--extra-files", dest="extra_files", type=list,
-        help("List of extra files to copy to the final package. Useful for "
-             "adding references files that may not be used by the scene. ")
+        help=("List of extra files to copy to the final package. Useful for "
+              "adding references files that may not be used by the scene. ")
     )
     # Extra files dest copy dir
     parser_run.add_argument(
         "--extra-subdir", dest="extra_subdir", type=str,
-        help(
+        help=(
             "Subdir to package extra files under. Eg: 'reference_images', etc."
         )
     )
@@ -126,7 +127,7 @@ def main():
     # Overwrite existing
     parser_run.add_argument(
         "-o", "--overwrite", dest="overwrite", action="store_true",
-        help(
+        help=(
             "If target package destination is already a package, overwrite it."
         )
     )
@@ -134,10 +135,10 @@ def main():
     # Testing modes
     parser_run.add_argument(
         "--no-copy", dest="no_copy", action="store_true",
-        help("Runs packager without packaging the file dependencies. "
-             "Outputs packaged scene with updated paths and package metadata. "
-             "Prints a log of source/dest paths for file dependencies, but "
-             "does not actually copy them.")
+        help=("Runs packager without packaging the file dependencies. "
+              "Outputs packaged scene with updated paths and package "
+              "metadata. Prints a log of source/dest paths for file "
+              "dependencies, but does not actually copy them.")
     )
     parser_run.add_argument(
         "--dryrun", dest="dryrun", action="store_true",

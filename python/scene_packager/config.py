@@ -10,10 +10,7 @@ Any functions not overridden will use the default implementations below.
 # Standard
 import os
 
-
-# Anima testing
-from core_pipeline.utils import env_utils
-
+# Scene packager
 import scene_packager
 
 
@@ -33,7 +30,7 @@ def package_tmp_dir(source_scene, **kwargs):
     Returns:
         str
     """
-    project = kwargs.get("project", env_utils.get_project())
+    project = kwargs.get("project", os.environ["LAUNCHAPP_PROJECT"])
     return "S:/ANIMA/projects/{}/tmp/scene_packager".format(project)
 
 
