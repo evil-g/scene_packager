@@ -20,9 +20,7 @@ import traceback
 
 # Globals
 CONFIG = None
-# Package metadata filenames
-COPY_METADATA = "copy_files.json"
-PACKAGE_METADATA = "package_metadata.json"
+
 # Frame regex
 FRAME_PAD_REGEX = r"(?<=[_\.])(?P<frame>#+|\d+|\%\d*d)$"
 # Log
@@ -384,35 +382,35 @@ def get_renamed_dst_path(src_path, patterns):
     return renamed
 
 
-def write_file_copy_metadata(metadata, metadata_dir):
+def write_file_copy_metadata(metadata, metadata_path):
     """
     Write file copy metadata
 
     Args:
         metadata (dict): Metadata dict
-        metadata_dir (str): Parent dir for metadata
+        metadata_path (str): Path to write metadata to
 
     Returns:
         File path str
     """
-    path = clean_path(os.path.join(metadata_dir, COPY_METADATA))
+    path = clean_path(metadata_path)
     save_json(path, metadata)
 
     return path
 
 
-def write_package_metadata(metadata, metadata_dir):
+def write_package_metadata(metadata, metadata_path):
     """
     Write package metadata
 
     Args:
         metadata (dict): Metadata dict
-        metadata_dir (str): Parent dir for metadata
+        metadata_path (str): Path to write metadata to
 
     Returns:
         File path str
     """
-    path = clean_path(os.path.join(metadata_dir, PACKAGE_METADATA))
+    path = clean_path(metadata_path)
     save_json(path, metadata)
 
     return path

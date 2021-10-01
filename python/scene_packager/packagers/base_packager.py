@@ -5,7 +5,7 @@ import logging
 import os
 
 # Scene packager
-from scene_packager import utils
+from scene_packager import config, utils
 
 
 class Packager(object):
@@ -28,6 +28,12 @@ class Packager(object):
         self.scene = None
         self.settings = None
         self.extra_files = None
+
+        # Scene attrs
+        # Script start/end
+        self.scene_start = None
+        self.scene_end = None
+        self.scene_root = None
 
         # Keys for config substitution
         self.config_keys = {}
@@ -54,6 +60,12 @@ class Packager(object):
 
         # File dependency data dict
         self.dep_data = {}
+
+        # Scene file text backup
+        self._scene_txt = ""
+        # TODO - Nuke specific
+        # Skip node classes when copying files
+        self.exclude_node_files = []
 
         # Source scene
         self.set_scene_file(scene, config_keys, extra_files)
@@ -99,6 +111,11 @@ class Packager(object):
 
         # Frame limit setting
         self.set_frame_limit_mode(self.settings.get("use_frame_limit", 0))
+
+        # TODO Check file data
+        # Load file text
+        with open(self.scene, "r") as handle:
+            self._scene_txt = handle.read()
 
     def set_relative_path_mode(self, relative):
         """
@@ -218,7 +235,7 @@ class Packager(object):
                                "start": start_frame,
                                "end": end_frame} }
         """
-        raise NotImplementedError
+        config.load_scene_data()
 
     def dependency_files(self):
         """
@@ -255,7 +272,15 @@ class Packager(object):
 
     def write_packaged_scene(self):
         """Write packaged scene with new filepaths"""
-        raise NotImplementedError
+        return config.write_packaged_scene(
+            self.package_source_scene,
+            self.packaged_scene,
+            self.dep_data,
+            self.root,
+            self.scene_start,
+            self.scene_end,
+            self.relative_paths
+        )
 
     def pre_package(self):
         """
