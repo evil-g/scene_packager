@@ -8,7 +8,7 @@ import os
 import logging
 
 # Scene packager
-from . import config
+from . import api, config
 
 
 # Log
@@ -85,7 +85,7 @@ def main():
     parser_run = subparsers.add_parser("run", help="run --help")
 
     parser_run.add_argument(
-        "-s", "--scene", dest="input_scene", type=str, required=True,
+        "-s", "--scene", dest="input_scene", type=str,   # required=True,
         help=(
             "Either 1. Filepath of scene to package, or 2. Directory to search "
             "for scenes to package. If a directory is provided, finds and "
@@ -208,6 +208,11 @@ def main():
     dryrun = opts.get("dryrun", False)
     # TODO dryrun vs. nocopy
 
+    # ----------------------------------
+    # Initialize config
+    # ----------------------------------
+    _load_config_override(path=opts.get("config"))
+
     # Launch UI
     if opts.get("ui"):
         LOG.info("Starting Scene Packager UI...")
@@ -215,4 +220,8 @@ def main():
     # Package immediately
     else:
         LOG.info("Packaging {} scenes...".format(len(files)))
-        api.package_scenes(files, opts, overwrite=overwrite, dryrun=dryrun)
+        api.package_scenes(files,
+                           opts,
+                           extra_files=extra_files,
+                           overwrite=overwrite,
+                           dryrun=dryrun)

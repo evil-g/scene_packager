@@ -8,12 +8,16 @@ Any functions not overridden will use the default implementations below.
 """
 
 # Standard
+from datetime import datetime
 import os
 
 # Scene packager
 import scene_packager
 
 
+# -------------------------------------------------------
+# Package paths
+# -------------------------------------------------------
 def package_root(source_scene, **kwargs):
     """
     Get root directory of a new scene package
@@ -50,7 +54,7 @@ def packaged_scene_path(source_scene, package_root=None, **kwargs):
     )
 
 
-def packaged_source_scene_path(source_scene, package_root):
+def scene_backup_path(source_scene, package_root):
     """
     Get path where packaged copy of source scene will be written to
 
@@ -66,7 +70,7 @@ def packaged_source_scene_path(source_scene, package_root):
     )
 
 
-def packaged_metadata_path(package_root, **kwargs):
+def metadata_path(package_root, **kwargs):
     """
     Get package subdirectory where metadata should be written to
 
@@ -78,7 +82,7 @@ def packaged_metadata_path(package_root, **kwargs):
     )
 
 
-def packaged_copy_metadata_path(package_root, **kwargs):
+def filecopy_metadata_path(package_root, **kwargs):
     """
     Get package subdirectory where file copy data should be written to
 
@@ -88,6 +92,23 @@ def packaged_copy_metadata_path(package_root, **kwargs):
     return os.path.join(
         package_root, "nk", "package_info", "copy_files.json"
     )
+
+
+# -------------------------------------------------------
+# Package data settings
+# -------------------------------------------------------
+def package_metadata(scene, settings):
+    """
+    Add keys to the package metadata file
+    """
+    metadata = {
+        "date": datetime.now().strftime("%Y-%m-%d_%H%M%S"),
+        "package_settings": settings,
+        "source_file": scene,
+        "user": settings["user"],
+    }
+
+    return metadata
 
 
 def use_frame_limit():
@@ -109,7 +130,7 @@ def use_relative_paths():
     return True
 
 
-def get_project_directory(**kwargs):
+def project_directory(scene, **kwargs):
     """
     Project directory to use in scene settings
 
@@ -119,6 +140,9 @@ def get_project_directory(**kwargs):
     return " project_directory \"[python nuke.script_directory()]\"\n"
 
 
+# -------------------------------------------------------
+# File naming
+# -------------------------------------------------------
 def rename_src_file(filepath):
     """
     Rename source file
@@ -209,3 +233,22 @@ def write_packaged_scene(**kwargs):
     Implement per DCC
     """
     raise NotImplementedError()
+
+
+# -------------------------------------------------------
+# Pre/post hooks
+# -------------------------------------------------------
+def pre_package(scene, **kwargs):
+    """
+    Run before packaging
+    Implementation optional
+    """
+    pass
+
+
+def post_package(scene, **kwargs):
+    """
+    Run after packaging
+    Implementation optional
+    """
+    pass

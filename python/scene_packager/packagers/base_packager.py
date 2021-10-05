@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Standard
+import copy
 from datetime import datetime
 import logging
 import os
@@ -17,7 +18,7 @@ class Packager(object):
     Args:
         scene (str): Scene filepath
     """
-    def __init__(self, scene, config_keys, extra_files=None):
+    def __init__(self, scene, settings, extra_files=None):
 
         if not os.path.exists(scene):
             raise ValueError("Scene does not exist!")
@@ -35,28 +36,8 @@ class Packager(object):
         self.scene_end = None
         self.scene_root = None
 
-        # Keys for config substitution
-        self.config_keys = {}
-
-        # If 1, packaged scene will use relative path references
-        # (Relative to the packaged scene path
-        # If 0, use full disk path
-        self.relative_paths = 0
-
-        # If 1, only copy specific dependency files
-        # If 0, copy all files that match the dependency glob path
-        # Example: Nuke Read node has frame range limit knob.
-        #          If test_%04d.exr has frames 1001-1100 on disk,
-        #          but the Read node only uses frames 1001-1005,
-        #          we may want to skip copying frames 1006-1100.
-        self.frame_limit = 0
-
         # File copy metadata to be used by Deadline job
-        self.file_copy_metadata = {}
-
-        # Metdata paths
-        self.package_metadata = ""
-        self.file_copy_metadata = ""
+        self.filecopy_metadata = {}
 
         # File dependency data dict
         self.dep_data = {}
@@ -68,66 +49,68 @@ class Packager(object):
         self.exclude_node_files = []
 
         # Source scene
-        self.set_scene_file(scene, config_keys, extra_files)
+        self.set_scene_file(scene, settings, extra_files)
 
-    def _config_settings(self):
+    def _init_settings(self, settings):
         """
-        Config settings dict
-        """
-        return utils.get_package_settings(self.scene,
-                                          self.config_keys,
-                                          utils.packager_settings(),
-                                          self.extra_files)
+        Initialize settings.
+        If no key is provided, use config implementation.
 
-    def set_scene_file(self, scene, config_keys=None, extra_files=None):
+        Args:
+            settings (dict): Settings dict
+        """
+        if "package_root" not in settings:
+            settings["package_root"] = config.package_root(self.scene)
+
+        if "packaged_scene" not in settings:
+            settings["packaged_scene"] = config.packaged_scene_path(
+                self.scene
+            )
+
+        if "source_scene_backup" not in settings:
+            settings["source_scene_backup"] = config.scene_backup_path(
+                self.scene
+            )
+
+        if "metadata_path" not in settings:
+            settings["metadata_path"] = config.metadata_path()
+
+        if "filecopy_metadata_path" not in settings:
+            settings["filecopy_metadata_path"] = config.filecopy_metadata_path()
+
+        if "use_frame_limit" not in settings:
+            settings["use_frame_limit"] = config.use_frame_limit()
+
+        if "use_relative_paths" not in settings:
+            settings["use_relative_paths"] = config.use_relative_paths()
+
+        self.settings = copy.deepcopy(settings)
+        return self.settings
+
+    def set_scene_file(self, scene, settings=None, extra_files=None):
         """
         Set scene file for package
         """
         scene = utils.clean_path(scene)
-
         if not os.path.isfile(scene):
             raise ValueError("Scene does not exist: {0}")
 
         # Clear node data
         self.dep_data = {}
 
-        # Update scene (required), config keys (optional)
-        # and extra files (optional)
+        # Update scene
         self.scene = scene
-        if config_keys is not None:
-            self.config_keys = config_keys
+
+        # Initialize package settings
+        self._init_settings(settings or {})
+
+        # Extra files
         if extra_files is not None:
             self.extra_files = extra_files
 
-        # Update settings
-        self.settings = self._config_settings()
-
-        # Metdata paths
-        self.package_metadata = ""
-        self.file_copy_metadata = ""
-
-        # Relative path setting
-        self.set_relative_path_mode(self.settings.get("use_relative_path", 0))
-
-        # Frame limit setting
-        self.set_frame_limit_mode(self.settings.get("use_frame_limit", 0))
-
-        # TODO Check file data
         # Load file text
         with open(self.scene, "r") as handle:
             self._scene_txt = handle.read()
-
-    def set_relative_path_mode(self, relative):
-        """
-        Set relative path mode on/off
-        """
-        self.relative_paths = relative
-
-    def set_frame_limit_mode(self, limit):
-        """
-        Set frame range limit mode on/off
-        """
-        self.frame_limit = limit
 
     @property
     def package_root(self):
@@ -141,10 +124,51 @@ class Packager(object):
         """
         Path of packaged scene
         """
-        return utils.clean_path(
-            os.path.join(self.settings["package_scene_dir"],
-                         self.settings["package_scene_filename"])
-        )
+        return self.settings["packaged_scene_path"]
+
+    @property
+    def source_scene_backup(self):
+        """
+        Path of packaged scene
+        """
+        return self.settings["source_scene_backup"]
+
+    @property
+    def package_metadata_path(self):
+        """
+        Path of packaged scene
+        """
+        return self.settings["packaged_metadata_path"]
+
+    @property
+    def package_filecopy_metadata_path(self):
+        """
+        Path of packaged scene
+        """
+        return self.settings["packaged_filecopy_metadata_path"]
+
+    @property
+    def use_frame_limit(self):
+        """
+        Whether to use frame limit
+
+        If 1, only copy specific dependency files
+        If 0, copy all files that match the dependency glob path
+        Example: Nuke Read node has frame range limit knob.
+                 If test_%04d.exr has frames 1001-1100 on disk,
+                 but the Read node only uses frames 1001-1005,
+                 we may want to skip copying frames 1006-1100.
+        """
+        return self.settings["use_frame_limit"]
+
+    @property
+    def use_relative_paths(self):
+        """
+        Path of packaged scene
+
+        TODO get old comment
+        """
+        return self.settings["use_relative_paths"]
 
     def get_packaged_path(self, filepath, parent_dir):
         """
@@ -180,7 +204,7 @@ class Packager(object):
         # Get basic packaged path
         return utils.basic_package_dst_path(filepath, parent_dir)
 
-    def get_file_copy_metadata(self):
+    def get_filecopy_metadata(self):
         """
         Get file copy metadata dict
 
@@ -196,7 +220,7 @@ class Packager(object):
 
             # Specific frames
             frames = []
-            if self.frame_limit:
+            if self.use_frame_limit:
                 start = data.get("start")
                 end = data.get("end")
                 if start is not None and end is not None:
@@ -225,6 +249,15 @@ class Packager(object):
 
         return to_copy
 
+    def package_metadata(self):
+        """
+        Package metadata dict
+
+        Returns:
+            Dict
+        """
+        return config.package_metadata(self.scene, self.settings)
+
     def load_scene_data(self):
         """
         Load scene data into dict
@@ -235,7 +268,7 @@ class Packager(object):
                                "start": start_frame,
                                "end": end_frame} }
         """
-        config.load_scene_data()
+        self.dep_data = config.load_scene_data()
 
     def dependency_files(self):
         """
@@ -246,32 +279,26 @@ class Packager(object):
         """
         return self.dep_data.keys()
 
-    def write_file_copy_metadata(self):
+    def write_filecopy_metadata(self):
         """
         Save file data for file metadata to be used by file copy
         """
-        self.file_copy_metadata = utils.write_file_copy_metadata(
-            self.get_file_copy_metadata(),
-            self.settings["file_copy_metadata_dir"]
+        utils.write_filecopy_metadata(
+            self.get_filecopy_metadata(), self.filecopy_metadata_path
         )
 
     def write_package_metadata(self):
         """
         Save packager settings to metadata path
         """
-        metadata = {
-            "date": datetime.now().strftime("%Y-%m-%d_%H%M%S"),
-            "package_settings": self.settings,
-            "source_file": self.scene,
-            "user": self.settings["user"],
-        }
-
-        self.package_metadata = utils.write_package_metadata(
-            metadata, self.settings["metadata_dir"]
+        utils.write_package_metadata(
+            self.package_metadata(), self.metadata_path
         )
 
     def write_packaged_scene(self):
-        """Write packaged scene with new filepaths"""
+        """
+        Write packaged scene with updated filepaths
+        """
         return config.write_packaged_scene(
             self.package_source_scene,
             self.packaged_scene,
@@ -279,7 +306,7 @@ class Packager(object):
             self.root,
             self.scene_start,
             self.scene_end,
-            self.relative_paths
+            self.use_relative_paths
         )
 
     def pre_package(self):
@@ -290,20 +317,37 @@ class Packager(object):
         3. Export file copy metadata
         """
         # Copy original scene to package backup dir
-        scene_copy = os.path.join(self.settings["scene_source_dir"],
-                                  os.path.basename(self.scene))
-        self.package_source_scene = utils.copy_file(self.scene, scene_copy)
+        self.log.info("Making backup of original scene: {} --> {}".format(
+            self.scene, self.source_scene_backup)
+        )
+        utils.copy_file(self.scene, self.source_scene_backup)
 
         # Write packager metadata
         self.write_package_metadata()
-        self.write_file_copy_metadata()
+        self.write_filecopy_metadata()
 
-    def submit(self):
+        # Override config pre-package
+        config.pre_package(self.scene)
+
+    def package(self):
         """
-        Hook for farm submission
-        Typically called inside self.run implementation
+        Main package ops:
+        1. Write packaged scene w/ updated paths
+        2. Copy files
         """
-        raise NotImplementedError
+        self.write_packaged_scene()
+
+        # Copy files
+        from pprint import pprint
+        pprint(self.get_filecopy_metadata())
+        pprint(self.package_metadata())
+
+    def post_package(self):
+        """
+        Post package ops
+        Override can be implemented in user config
+        """
+        config.post_package(self.scene)
 
     def run(self, overwrite=False, dryrun=False):
         """
@@ -341,8 +385,7 @@ class Packager(object):
         self.pre_package()
 
         # Write scene with relative paths
-        self.write_packaged_scene()
+        self.package()
 
-        # Submit copy job
-        if not dryrun:
-            self.submit()
+        # Post packaging
+        self.post_package()
