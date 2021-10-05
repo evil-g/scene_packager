@@ -181,8 +181,8 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     new_root = utils.clean_root(root._data, project_dir, start, end)
     if new_root:
         raw_scene_data = re.sub(
-            ur"%s" % root.data.decode("utf8"),
-            ur"%s" % new_root.decode("utf8"),
+            r"%s" % root.data.decode("utf8"),
+            r"%s" % new_root.decode("utf8"),
             raw_scene_data.decode("utf8"),
             flags=re.UNICODE).encode("utf8")
 
@@ -199,8 +199,8 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
             dst_file = data["packaged_path"]
 
         LOG.debug("Replacing: {} {}".format(file, dst_file))
-        raw_scene_data = re.sub(ur"%s" % file.decode("utf8"),
-                                ur"%s" % dst_file.decode("utf8"),
+        raw_scene_data = re.sub(r"%s" % file.decode("utf8"),
+                                r"%s" % dst_file.decode("utf8"),
                                 raw_scene_data.decode("utf8"),
                                 flags=re.UNICODE).encode("utf8")
 

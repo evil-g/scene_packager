@@ -155,7 +155,7 @@ def save_json(path, data, overwrite=False):
     Returns: None
     """
     try:
-        with open(path, mode="wb") as handle:
+        with open(path, mode="w") as handle:
             json.dump(data, handle, indent=4)
     except Exception:
         traceback.print_exc()

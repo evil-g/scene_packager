@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import traceback
 
 from . import packagers
 
@@ -52,7 +53,8 @@ def package_scenes(scenes, config_keys, extra_files=None, overwrite=False,
                               overwrite=overwrite, dryrun=dryrun)
             )
         except ValueError as e:
-            if e.message.startswith("Scene does not exist"):
+            tb_message = "".join(traceback.format_exception(type(e), e, None))
+            if tb_message.startswith("Scene does not exist"):
                 dne.append(scene)
             else:
                 raise e

@@ -165,9 +165,9 @@ def clean_root(root_data, pdir, start, end):
         if match:
             before = inserted[0:match.end()]
             after = inserted[match.end():]
-            inserted = ur"%s" % before.decode("utf8") + \
-                ur"%s" % pdir.decode("utf8") + \
-                ur"%s" % after.decode("utf8")
+            inserted = r"%s" % before.decode("utf8") + \
+                r"%s" % pdir.decode("utf8") + \
+                r"%s" % after.decode("utf8")
 
     # Root start
     if "first_frame" not in inserted:
@@ -177,9 +177,9 @@ def clean_root(root_data, pdir, start, end):
 
             before = inserted[0:match.end()]
             after = inserted[match.end():]
-            inserted = ur"%s" % before.decode("utf8") + \
-                ur"%s" % first_frame.decode("utf8") + \
-                ur"%s" % after.decode("utf8")
+            inserted = r"%s" % before.decode("utf8") + \
+                r"%s" % first_frame.decode("utf8") + \
+                r"%s" % after.decode("utf8")
     # Root end
     if "last_frame" not in inserted:
         match = re.search("Root \{\n", inserted)
@@ -187,9 +187,9 @@ def clean_root(root_data, pdir, start, end):
             last_frame = " last_frame {0}\n".format(end)
             before = inserted[0:match.end()]
             after = inserted[match.end():]
-            inserted = ur"%s" % before.decode("utf8") + \
-                ur"%s" % last_frame.decode("utf8") + \
-                ur"%s" % after.decode("utf8")
+            inserted = r"%s" % before.decode("utf8") + \
+                r"%s" % last_frame.decode("utf8") + \
+                r"%s" % after.decode("utf8")
 
     return inserted.encode("utf8")
 
