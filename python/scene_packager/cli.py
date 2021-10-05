@@ -78,7 +78,8 @@ def main():
         "directory. See details with scene-packager --help"
     ))
 
-    subparsers = parser.add_subparsers(help="sub-command help")
+    subparsers = parser.add_subparsers(dest="subparser_command",
+                                       help="sub-command help")
 
     # --------------------------------------------------------------------
     # Run subcommand
@@ -169,21 +170,27 @@ def main():
 
     opts = parser.parse_args()
 
-    # --- Inspecting ---
-    if opts.get("inspect_dir"):
+    print(opts)
+
+    # --- Inspect mode ---
+    if "inpsect" == opts.subparser_command:
 
         return
 
-    # --- Running --
+    # --- Run mode --
+    if "run" != opts.subparser_command:
+        raise RuntimeError(
+            "Invalid subparser command: {0}".format(opts.subparser_command)
+        )
 
     # TODO Load config
 
     # Directory mode
-    if os.path.isdir(opts["input_scene"]):
+    if os.path.isdir(opts.input_scene):
         files = []
     # Single scene
     else:
-        files = [opts["input_scene"]]
+        files = [opts.input_scene]
 
     # No scenes
     if not files:
@@ -191,7 +198,7 @@ def main():
     # Multiple scenes
     elif len(files) > 1:
         # No root override allowed with multiple files
-        if opts.get("package_root"):
+        if opts.package_root:
             raise RuntimeError(
                 "Cannot use --package-root when packaging multiple files. "
                 "Update the config .py if you need to adjust the package root."
@@ -200,21 +207,16 @@ def main():
         # TODO User input required
         LOG.info("Continue packaging {} scene files?".format(len(files)))
 
-    # Extra files
-    extra_files = opts.get("extra_files", [])
     # TODO extra files subdir
-
-    overwrite = opts.get("overwrite", False)
-    dryrun = opts.get("dryrun", False)
     # TODO dryrun vs. nocopy
 
     # ----------------------------------
     # Initialize config
     # ----------------------------------
-    _load_config_override(path=opts.get("config"))
+    _load_config_override(path=opts.config)
 
     # Launch UI
-    if opts.get("ui"):
+    if opts.ui:
         LOG.info("Starting Scene Packager UI...")
         pass
     # Package immediately
@@ -222,6 +224,6 @@ def main():
         LOG.info("Packaging {} scenes...".format(len(files)))
         api.package_scenes(files,
                            opts,
-                           extra_files=extra_files,
-                           overwrite=overwrite,
-                           dryrun=dryrun)
+                           extra_files=opts.extra_files,
+                           overwrite=opts.overwrite,
+                           dryrun=opts.dryrun)
