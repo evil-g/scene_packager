@@ -9,6 +9,7 @@ Any functions not overridden will use the default implementations below.
 
 # Standard
 from datetime import datetime
+import getpass
 import os
 
 # Scene packager
@@ -18,15 +19,23 @@ import scene_packager
 # -------------------------------------------------------
 # Package paths
 # -------------------------------------------------------
-def package_root(source_scene, **kwargs):
+def package_root(source_scene):
     """
     Get root directory of a new scene package
     """
-    return "S:/ANIMA/projects/${project}/user/${user}/delivery/" \
-        "scene_packager/${application}/${date}/${shot}".format(kwargs)
+    # return "S:/ANIMA/projects/${project}/user/${user}/delivery/" \
+    #     "scene_packager/${application}/${date}/${shot}".format(kwargs)
+
+    return os.path.join(
+        os.path.expandvars("S:/ANIMA/projects/$LAUNCHAPP_PROJECT/user"),
+        getpass.getuser(),
+        "scene_packager",
+        "nuke",
+        datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    )
 
 
-def package_tmp_dir(source_scene, **kwargs):
+def package_tmp_dir(source_scene):
     """
     When overwriting a package, it will be moved to
     this tmp directory and deleted from there.
@@ -34,11 +43,12 @@ def package_tmp_dir(source_scene, **kwargs):
     Returns:
         str
     """
-    project = kwargs.get("project", os.environ["LAUNCHAPP_PROJECT"])
-    return "S:/ANIMA/projects/{}/tmp/scene_packager".format(project)
+    return os.path.expandvars(
+        "S:/ANIMA/projects/$LAUNCHAPP_PROJECT/tmp/scene_packager"
+    )
 
 
-def packaged_scene_path(source_scene, package_root=None, **kwargs):
+def packaged_scene_path(source_scene, package_root):
     """
     Get path where packaged scene will be written to
 
@@ -70,7 +80,7 @@ def scene_backup_path(source_scene, package_root):
     )
 
 
-def metadata_path(package_root, **kwargs):
+def metadata_path(package_root):
     """
     Get package subdirectory where metadata should be written to
 
@@ -82,7 +92,7 @@ def metadata_path(package_root, **kwargs):
     )
 
 
-def filecopy_metadata_path(package_root, **kwargs):
+def filecopy_metadata_path(package_root):
     """
     Get package subdirectory where file copy data should be written to
 
@@ -105,7 +115,7 @@ def package_metadata(scene, settings):
         "date": datetime.now().strftime("%Y-%m-%d_%H%M%S"),
         "package_settings": settings,
         "source_file": scene,
-        "user": settings["user"],
+        "user": getpass.getuser(),
     }
 
     return metadata
@@ -130,7 +140,7 @@ def use_relative_paths():
     return True
 
 
-def project_directory(scene, **kwargs):
+def project_directory(scene):
     """
     Project directory to use in scene settings
 
@@ -221,16 +231,24 @@ def get_packaged_path(filepath, parent_dir):
     return scene_packager.utils.basic_package_dst_path(filepath, parent_dir)
 
 
-def load_scene_data(**kwargs):
+def load_scene_data(packaged_scene, package_root, source_scene):
     """
     Implement per DCC
+    Returns dict of scene data
+
+    Args:
+        packaged_scene (str): Packaged scene path
+        package_root (str): Package root path
+        source_scene (str): Source scene path
     """
     raise NotImplementedError()
 
 
-def write_packaged_scene(**kwargs):
+def write_packaged_scene(source_scene, dst_scene, dep_data, root,
+                         project_dir, start, end, relative_paths=False):
     """
     Implement per DCC
+    Write packaged scene. Can be reimplemented per application
     """
     raise NotImplementedError()
 
@@ -238,7 +256,7 @@ def write_packaged_scene(**kwargs):
 # -------------------------------------------------------
 # Pre/post hooks
 # -------------------------------------------------------
-def pre_package(scene, **kwargs):
+def pre_package(scene):
     """
     Run before packaging
     Implementation optional
@@ -246,7 +264,7 @@ def pre_package(scene, **kwargs):
     pass
 
 
-def post_package(scene, **kwargs):
+def post_package(scene):
     """
     Run after packaging
     Implementation optional

@@ -27,7 +27,7 @@ class Packager(object):
         self.log = logging.getLogger("scene_packager")
 
         self.scene = None
-        self.settings = None
+        self.settings = {}
         self.extra_files = None
 
         # Scene attrs
@@ -59,32 +59,31 @@ class Packager(object):
         Args:
             settings (dict): Settings dict
         """
-        if "package_root" not in settings:
-            settings["package_root"] = config.package_root(self.scene)
+        self.settings = {}
 
-        if "packaged_scene" not in settings:
-            settings["packaged_scene"] = config.packaged_scene_path(
-                self.scene
-            )
+        # Defaults
+        self.settings["package_root"] = config.package_root(self.scene)
 
-        if "source_scene_backup" not in settings:
-            settings["source_scene_backup"] = config.scene_backup_path(
-                self.scene
-            )
+        self.settings["packaged_scene"] = \
+            config.packaged_scene_path(self.scene, self.package_root)
 
-        if "metadata_path" not in settings:
-            settings["metadata_path"] = config.metadata_path()
+        self.settings["source_scene_backup"] = \
+            config.scene_backup_path(self.scene, self.package_root)
 
-        if "filecopy_metadata_path" not in settings:
-            settings["filecopy_metadata_path"] = config.filecopy_metadata_path()
+        self.settings["metadata_path"] = config.metadata_path(self.package_root)
 
-        if "use_frame_limit" not in settings:
-            settings["use_frame_limit"] = config.use_frame_limit()
+        self.settings["filecopy_metadata_path"] = \
+            config.filecopy_metadata_path(self.package_root)
 
-        if "use_relative_paths" not in settings:
-            settings["use_relative_paths"] = config.use_relative_paths()
+        self.settings["use_frame_limit"] = config.use_frame_limit()
 
-        self.settings = copy.deepcopy(settings)
+        self.settings["use_relative_paths"] = config.use_relative_paths()
+
+        # Overrides
+        for key, val in settings.items():
+            if val is not None:
+                self.settings[key] = val
+
         return self.settings
 
     def set_scene_file(self, scene, settings=None, extra_files=None):
@@ -124,7 +123,7 @@ class Packager(object):
         """
         Path of packaged scene
         """
-        return self.settings["packaged_scene_path"]
+        return self.settings["packaged_scene"]
 
     @property
     def source_scene_backup(self):
@@ -138,14 +137,14 @@ class Packager(object):
         """
         Path of packaged scene
         """
-        return self.settings["packaged_metadata_path"]
+        return self.settings["metadata_path"]
 
     @property
     def package_filecopy_metadata_path(self):
         """
         Path of packaged scene
         """
-        return self.settings["packaged_filecopy_metadata_path"]
+        return self.settings["filecopy_metadata_path"]
 
     @property
     def use_frame_limit(self):
@@ -213,6 +212,8 @@ class Packager(object):
         """
         to_copy = {}
 
+        print(self.dep_data)
+
         for src_path, data in self.dep_data.items():
             # Glob style source/dst for each node
             src_glob = utils.get_frame_glob_path(src_path)
@@ -268,7 +269,9 @@ class Packager(object):
                                "start": start_frame,
                                "end": end_frame} }
         """
-        self.dep_data = config.load_scene_data()
+        self.root, self.dep_data = config.load_scene_data(
+            self.packaged_scene, self.package_root, self.scene
+        )
 
     def dependency_files(self):
         """
@@ -284,7 +287,7 @@ class Packager(object):
         Save file data for file metadata to be used by file copy
         """
         utils.write_filecopy_metadata(
-            self.get_filecopy_metadata(), self.filecopy_metadata_path
+            self.get_filecopy_metadata(), self.package_filecopy_metadata_path
         )
 
     def write_package_metadata(self):
@@ -292,7 +295,7 @@ class Packager(object):
         Save packager settings to metadata path
         """
         utils.write_package_metadata(
-            self.package_metadata(), self.metadata_path
+            self.package_metadata(), self.package_metadata_path
         )
 
     def write_packaged_scene(self):
@@ -300,7 +303,7 @@ class Packager(object):
         Write packaged scene with updated filepaths
         """
         return config.write_packaged_scene(
-            self.package_source_scene,
+            self.source_scene_backup,
             self.packaged_scene,
             self.dep_data,
             self.root,

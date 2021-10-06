@@ -9,16 +9,9 @@ def get_scene_packager(scene, config_keys, extra_files=None):
     """
     Get scene packager for a scene
     """
-    scene_type = os.path.splitext(scene)[-1]
-    # Nuke
-    if ".nk" == scene_type:
-        packager = packagers.nuke.nuke_packager.NukePackager(scene,
-                                                             config_keys,
-                                                             extra_files)
-    else:
-        raise NotImplementedError(
-            "Scene type not supported: {0}".format(scene_type))
-
+    packager = packagers.base_packager.Packager(scene,
+                                                config_keys,
+                                                extra_files)
     return packager
 
 
@@ -31,9 +24,7 @@ def package_scene(scene, config_keys, extra_files=None, overwrite=False,
         raise ValueError("Scene does not exist! {0}".format(scene))
 
     packager = get_scene_packager(scene, config_keys, extra_files)
-    job_id = packager.run(overwrite=overwrite, dryrun=dryrun)
-
-    return job_id
+    return packager.run(overwrite=overwrite, dryrun=dryrun)
 
 
 def package_scenes(scenes, config_keys, extra_files=None, overwrite=False,

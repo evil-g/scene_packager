@@ -382,7 +382,7 @@ def get_renamed_dst_path(src_path, patterns):
     return renamed
 
 
-def write_file_copy_metadata(metadata, metadata_path):
+def write_filecopy_metadata(metadata, metadata_path):
     """
     Write file copy metadata
 

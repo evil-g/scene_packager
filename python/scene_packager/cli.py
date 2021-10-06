@@ -170,8 +170,6 @@ def main():
 
     opts = parser.parse_args()
 
-    print(opts)
-
     # --- Inspect mode ---
     if "inpsect" == opts.subparser_command:
 
@@ -223,7 +221,7 @@ def main():
     else:
         LOG.info("Packaging {} scenes...".format(len(files)))
         api.package_scenes(files,
-                           opts,
+                           vars(opts),
                            extra_files=opts.extra_files,
                            overwrite=opts.overwrite,
                            dryrun=opts.dryrun)
