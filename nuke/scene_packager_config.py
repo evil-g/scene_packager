@@ -8,6 +8,16 @@ Any functions not overridden will use the default implementations below.
 """
 
 
+def project_directory(packaged_scene, package_root, source_scene):
+    """
+    Project directory to use in scene settings
+
+    Returns:
+        str
+    """
+    return " project_directory \"[python nuke.script_directory()]\"\n"
+
+
 def load_scene_data(packaged_scene, package_root, source_scene):
     """
     Returns dict of scene data
@@ -39,14 +49,14 @@ def load_scene_data(packaged_scene, package_root, source_scene):
         if (not utils.exclude_node_files(node)) and node.files():
             for file in node.files():
                 # Get target file path
-                dst = scene_packager.config.get_packaged_path(
+                dst = scene_packager.scene_packager_config.get_packaged_path(
                     file,
                     os.path.join(
                         package_root, utils.get_node_subdir(node)
                     )
                 )
                 rel = ""
-                if scene_packager.config.use_relative_paths():
+                if scene_packager.scene_packager_config.use_relative_paths():
                     try:
                         rel = scene_packager.utils.get_relative_path(
                             packaged_scene, dst, package_root

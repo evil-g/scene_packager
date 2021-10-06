@@ -140,65 +140,9 @@ def use_relative_paths():
     return True
 
 
-def project_directory(scene):
-    """
-    Project directory to use in scene settings
-
-    Returns:
-        str
-    """
-    return " project_directory \"[python nuke.script_directory()]\"\n"
-
-
 # -------------------------------------------------------
 # File naming
 # -------------------------------------------------------
-def rename_src_file(filepath):
-    """
-    Rename source file
-
-    Args:
-        filepath (str): Dependency filepath from source scene
-
-    Returns:
-        Dest filepath str
-    """
-    rename_patterns = [
-        {
-            "#": "Ex: LUA001.bg_crytpo_material_A_.v1_%04d.exr, LUA001.bg_crytpo_material_A_.v1.%04d.exr",
-            "desc": "Image publish + Square Enix naming",
-            "regex": "^(?!.*houdini\/images.*).*\/(?P<layer>[a-zA-Z0-9_]+)\/([0-9]+)\/img\/full\/data\/(?P<aov>[a-zA-Z0-9_]+)\/(?P<shot>[a-zA-Z]+[0-9]+)([a-zA-Z]+|)[.](?P<desc>[a-zA-Z0-9_]+(?=_[a-zA-Z]+_))_(?P<colorspace>[a-zA-Z]+)_[.]v(?P<version>[0-9]+)[._](?<=[_.])(?P<frame>#+|[0-9]+|%[0-9]*d)(?P<ext>(?!(.autosave|~$$))[.][a-zA-Z0-9]+$$)",
-            "format_str": "{shot}.{layer}{desc}_{colorspace}_.v{version:0>1d}.{frame}{ext}",
-            "sub_chars": {"desc": {"_" : ""}, "layer": {"_": ""}}
-        },
-        {
-            "#": "Ex: ../lighting/chara/02/img/full/data/specular_01/main_siva_LUA001_lighting_chara_####.exr",
-            "desc": "Image publish + Anima naming",
-            "regex": "\/(?P<version>[0-9]+)\/img\/full\/data\/(?P<aov>[a-zA-Z0-9_]+)\/(?P<episode>[a-zA-Z0-9]+)_(?P<sequence>[a-zA-Z0-9]+)_(?P<shot>[a-zA-Z0-9]+)([a-zA-Z]+|)_(?P<datatype>[a-zA-Z0-9]+)_(?P<layer>[a-zA-Z0-9]+)_(?<=[_.])(?P<frame>#+|[0-9]+|%[0-9]*d)(?P<ext>(?!(.autosave|~$$))[.][a-zA-Z0-9]+$$)",
-            "format_str": "{shot}.{layer}{aov}_AG_.v{version:0>1d}.{frame}{ext}",
-            "sub_chars": {"aov": {"_": ""}, "layer": {"_": ""}}
-        },
-        {
-            "#": "Ex: ../images/v24/fxChain_after/deep/LUA001.effectfxChain_afterDeep_R_.24.####.exr, ../images/v24/fxChain_after/deep/LUA001.effectfxChain_afterDeep_R_.v24_####.exr",
-            "desc": "Work area FX images",
-            "regex": "\/images\/(v|)([0-9]+)\/(?P<aov>[a-zA-Z0-9_]+)\/((?P<pass>[a-zA-Z0-9_]+)\/|)(?P<shot>[a-zA-Z]+[0-9]+)([a-zA-Z]+|)[.](?P<desc>[a-zA-Z0-9_]+(?=_[a-zA-Z]+_))_(?P<colorspace>[a-zA-Z]+)_[.](v|)(?P<version>[0-9]+)[._](?<=[_.])(?P<frame>#+|[0-9]+|%[0-9]*d)(?P<ext>(?!(.autosave|~$$))[.][a-zA-Z0-9]+$$)",
-            "format_str": "{shot}.{desc}{version:0>1d}_{colorspace}_.v{version:0>1d}.{frame}{ext}",
-            "sub_chars": {"desc": {"_" : ""}}
-        },
-        {
-            "#": "Ex: LUA001.bg_crytpo_material_A_.v1_%04d.exr, LUA001.bg_crytpo_material_A_.v1.%04d.exr",
-            "desc": "Tmp area + Square Enix naming",
-            "regex": "^.*\/tmp\/(.+\/|)(?P<shot>[a-zA-Z]+[0-9]+)([a-zA-Z]+|)[.](?P<desc>[a-zA-Z0-9_]+(?=_[a-zA-Z]+_))_(?P<colorspace>[a-zA-Z]+)_[.]v(?P<version>[0-9]+)[._](?<=[_.])(?P<frame>#+|[0-9]+|%[0-9]*d)(?P<ext>(?!(.autosave|~$$))[.][a-zA-Z0-9]+$$)",
-            "format_str": "{shot}.{desc}_{colorspace}_.v{version:0>1d}.{frame}{ext}",
-            "sub_chars": {"desc": {"_" : ""}}
-        }
-    ]
-
-    return scene_packager.utils.get_renamed_dst_path(
-        scene_packager.utils.clean_path(filepath), rename_patterns
-    )
-
-
 def get_packaged_path(filepath, parent_dir):
     """
     Args:
@@ -208,27 +152,24 @@ def get_packaged_path(filepath, parent_dir):
     Returns:
         Dest filepath str
     """
-    # Found rename pattern match
-    renamed = rename_src_file(filepath)
-    if renamed:
-        # Rename has extra dir already
-        if os.path.dirname(renamed):
-            return scene_packager.utils.clean_path(
-                os.path.join(parent_dir, renamed)
-            )
-        # Rename is filename only
-        # Add filename dir
-        else:
-            return scene_packager.utils.clean_path(
-                os.path.join(
-                    parent_dir,
-                    os.path.splitext(os.path.basename(renamed))[0],
-                    renamed
-                )
-            )
-
     # Get basic packaged path
     return scene_packager.utils.basic_package_dst_path(filepath, parent_dir)
+
+
+# -------------------------------------------------------
+# Must be implemented per-DCC
+# Nuke implementation: scene_packager/nuke/scene_packager_config.py
+# -------------------------------------------------------
+def project_directory(packaged_scene, package_root, source_scene):
+    """
+    Project directory for packaged scene
+
+    Args:
+        packaged_scene (str): Packaged scene path
+        package_root (str): Package root path
+        source_scene (str): Source scene path
+    """
+    raise NotImplementedError()
 
 
 def load_scene_data(packaged_scene, package_root, source_scene):
