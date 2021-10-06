@@ -3,7 +3,7 @@ from . import (
     app,
     batch_copy,
     cli,
-    config,
     packagers,
+    scene_packager_config,
     utils
 )

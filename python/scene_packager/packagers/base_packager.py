@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 # Standard
-import copy
-from datetime import datetime
 import logging
 import os
 
 # Scene packager
-from scene_packager import config, utils
+from scene_packager import batch_copy, scene_packager_config, utils
 
 
 class Packager(object):
@@ -62,22 +60,34 @@ class Packager(object):
         self.settings = {}
 
         # Defaults
-        self.settings["package_root"] = config.package_root(self.scene)
+        self.settings["package_root"] = scene_packager_config.package_root(
+            self.scene
+        )
 
         self.settings["packaged_scene"] = \
-            config.packaged_scene_path(self.scene, self.package_root)
+            scene_packager_config.packaged_scene_path(self.scene,
+                                                      self.package_root)
 
         self.settings["source_scene_backup"] = \
-            config.scene_backup_path(self.scene, self.package_root)
+            scene_packager_config.scene_backup_path(self.scene,
+                                                    self.package_root)
 
-        self.settings["metadata_path"] = config.metadata_path(self.package_root)
+        self.settings["metadata_path"] = scene_packager_config.metadata_path(
+            self.package_root
+        )
 
         self.settings["filecopy_metadata_path"] = \
-            config.filecopy_metadata_path(self.package_root)
+            scene_packager_config.filecopy_metadata_path(self.package_root)
 
-        self.settings["use_frame_limit"] = config.use_frame_limit()
+        self.settings["use_frame_limit"] = \
+            scene_packager_config.use_frame_limit()
 
-        self.settings["use_relative_paths"] = config.use_relative_paths()
+        self.settings["use_relative_paths"] = \
+            scene_packager_config.use_relative_paths()
+
+        self.settings["project_dir"] = scene_packager_config.project_directory(
+            self.packaged_scene, self.package_root, self.scene
+        )
 
         # Overrides
         for key, val in settings.items():
@@ -147,6 +157,10 @@ class Packager(object):
         return self.settings["filecopy_metadata_path"]
 
     @property
+    def project_dir(self):
+        return self.settings["project_dir"]
+
+    @property
     def use_frame_limit(self):
         """
         Whether to use frame limit
@@ -203,13 +217,18 @@ class Packager(object):
         # Get basic packaged path
         return utils.basic_package_dst_path(filepath, parent_dir)
 
-    def get_filecopy_metadata(self):
+    def get_filecopy_metadata(self, reload=False):
         """
         Get file copy metadata dict
 
         Returns:
             Dict
         """
+        # Return Existing
+        if reload is False and self.filecopy_metadata:
+            return self.filecopy_metadata
+
+        # Load fresh
         to_copy = {}
 
         print(self.dep_data)
@@ -248,7 +267,8 @@ class Packager(object):
                     "frames": []
                 }
 
-        return to_copy
+        self.filecopy_metadata = to_copy
+        return self.filecopy_metadata
 
     def package_metadata(self):
         """
@@ -257,7 +277,9 @@ class Packager(object):
         Returns:
             Dict
         """
-        return config.package_metadata(self.scene, self.settings)
+        return scene_packager_config.package_metadata(
+            self.scene, self.settings
+        )
 
     def load_scene_data(self):
         """
@@ -269,7 +291,7 @@ class Packager(object):
                                "start": start_frame,
                                "end": end_frame} }
         """
-        self.root, self.dep_data = config.load_scene_data(
+        self.root, self.dep_data = scene_packager_config.load_scene_data(
             self.packaged_scene, self.package_root, self.scene
         )
 
@@ -302,14 +324,15 @@ class Packager(object):
         """
         Write packaged scene with updated filepaths
         """
-        return config.write_packaged_scene(
+        return scene_packager_config.write_packaged_scene(
             self.source_scene_backup,
             self.packaged_scene,
             self.dep_data,
             self.root,
+            self.project_dir,
             self.scene_start,
             self.scene_end,
-            self.use_relative_paths
+            relative_paths=self.use_relative_paths
         )
 
     def pre_package(self):
@@ -330,27 +353,24 @@ class Packager(object):
         self.write_filecopy_metadata()
 
         # Override config pre-package
-        config.pre_package(self.scene)
+        scene_packager_config.pre_package(self.scene)
 
     def package(self):
         """
-        Main package ops:
-        1. Write packaged scene w/ updated paths
-        2. Copy files
+        Main package ops
         """
+        # Repath scene
         self.write_packaged_scene()
 
-        # Copy files
-        from pprint import pprint
-        pprint(self.get_filecopy_metadata())
-        pprint(self.package_metadata())
+        # Copy file dependencies
+        batch_copy.copy_files(self.filecopy_metadata)
 
     def post_package(self):
         """
         Post package ops
         Override can be implemented in user config
         """
-        config.post_package(self.scene)
+        scene_packager_config.post_package(self.scene)
 
     def run(self, overwrite=False, dryrun=False):
         """

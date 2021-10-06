@@ -180,9 +180,9 @@ def clean_root(root_data, pdir, start, end):
             before = inserted[0:match.end()]
             after = inserted[match.end():]
             try:
-                inserted = r"%s" % before.decode("utf8") + \
-                    r"%s" % pdir.decode("utf8") + \
-                    r"%s" % after.decode("utf8")
+                inserted = r"%s" % before + \
+                    r"%s" % pdir + \
+                    r"%s" % after
             except AttributeError:
                 inserted = r"%s" % before + r"%s" % pdir + r"%s" % after
 
@@ -194,9 +194,9 @@ def clean_root(root_data, pdir, start, end):
 
             before = inserted[0:match.end()]
             after = inserted[match.end():]
-            inserted = r"%s" % before.decode("utf8") + \
-                r"%s" % first_frame.decode("utf8") + \
-                r"%s" % after.decode("utf8")
+            inserted = r"%s" % before + \
+                r"%s" % first_frame + \
+                r"%s" % after
     # Root end
     if "last_frame" not in inserted:
         match = re.search("Root \{\n", inserted)
@@ -204,9 +204,9 @@ def clean_root(root_data, pdir, start, end):
             last_frame = " last_frame {0}\n".format(end)
             before = inserted[0:match.end()]
             after = inserted[match.end():]
-            inserted = r"%s" % before.decode("utf8") + \
-                r"%s" % last_frame.decode("utf8") + \
-                r"%s" % after.decode("utf8")
+            inserted = r"%s" % before + \
+                r"%s" % last_frame + \
+                r"%s" % after
 
     return inserted.encode("utf8")
 

@@ -78,29 +78,16 @@ def clean_path(path):
     return path
 
 
-def main():
+def copy_files(data, force=False):
     """
-    Copy files to destination dir in metadata
+    Copy files
+
+    Args:
+        data (dict):
+        force (bool): If True, overwrite
+
+    Returns: None
     """
-    args = parse_args()
-
-    # Validate scene data file
-    try:
-        metadata = args.file
-    except IndexError:
-        raise RuntimeError("No json file provided!")
-    else:
-        if not os.path.isfile(metadata):
-            raise OSError("Copy data json does not exist at '{0}'!"
-                          "".format(metadata))
-
-    # Force flag overwrites rename if on
-    force = args.force
-
-    # Load files
-    with open(metadata, mode="rb") as handle:
-        data = json.load(handle)
-
     # Copy each
     failed = []
     FRAME_REGEX = r"(?<=[_\.])(?P<frame>#+|\d+|\%\d*d)$"
@@ -245,6 +232,33 @@ def main():
         print("Copy errors:")
         print("\n".join(failed))
         raise RuntimeError("{0} errors copying files".format(len(failed)))
+
+
+def main():
+    """
+    Copy files to destination dir in metadata
+    """
+    args = parse_args()
+
+    # Validate scene data file
+    try:
+        metadata = args.file
+    except IndexError:
+        raise RuntimeError("No json file provided!")
+    else:
+        if not os.path.isfile(metadata):
+            raise OSError("Copy data json does not exist at '{0}'!"
+                          "".format(metadata))
+
+    # Force flag overwrites rename if on
+    force = args.force
+
+    # Load files
+    with open(metadata, mode="rb") as handle:
+        data = json.load(handle)
+
+    # Run
+    copy_files(data, force=force)
 
 
 if "__main__" == __name__:
