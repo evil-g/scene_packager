@@ -231,7 +231,8 @@ class Packager(object):
         # Load fresh
         to_copy = {}
 
-        print(self.dep_data)
+        # TODO Logging
+        # print(self.dep_data)
 
         for src_path, data in self.dep_data.items():
             # Glob style source/dst for each node

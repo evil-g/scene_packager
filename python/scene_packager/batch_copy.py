@@ -178,7 +178,8 @@ def copy_files(data, force=False):
 
             stdout, stderr = proc.communicate()
 
-            print(stdout)
+            # TODO outputs
+            # print(stdout)
             print(stderr)
             print(proc.returncode)
 

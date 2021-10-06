@@ -27,37 +27,6 @@ FRAME_PAD_REGEX = r"(?<=[_\.])(?P<frame>#+|\d+|\%\d*d)$"
 LOG = logging.getLogger("scene_packager.utils")
 
 
-def packager_settings(reload=False):
-    """
-    Read packager config settings file
-    Checks for json file at:
-        1. $SCENE_PACKAGER_CONFIG
-        2. $SCENE_PACKAGER_ROOT/config/scene_packager/scene_packager.json
-
-    Args:
-        reload (bool): If True, reload config
-
-    Returns:
-        Dict
-    """
-    global CONFIG
-
-    if not CONFIG or reload:
-        # Env var override
-        if os.getenv("SCENE_PACKAGER_CONFIG"):
-            CONFIG = load_json(
-                clean_path(os.environ["SCENE_PACKAGER_CONFIG"]))
-        # Pipeline config locations
-        else:
-            CONFIG = load_json(
-                clean_path(os.path.join(os.environ["SCENE_PACKAGER_ROOT"],
-                                        "config",
-                                        "scene_packager",
-                                        "scene_packager.json")))
-
-    return CONFIG
-
-
 def get_frame_glob_path(filepath):
     """
     Get glob style path for frames
@@ -177,82 +146,6 @@ def load_json(path, **kwargs):
 
     with open(path, mode="rb") as handle:
         return json.load(handle, **kwargs)
-
-
-def get_supported_keys(scene, config_keys=None):
-    """
-    Get supported keys by packager config.
-    These include scene context, date, filename, etc
-
-    Args:
-        scene (str): Scene filepath
-        config_keys (dict): User provided keys for config sub
-
-    Returns:
-        Dict of keys
-    """
-    if not config_keys:
-        config_keys = {}
-
-    # Date
-    if "date" not in config_keys:
-        config_keys["date"] = datetime.now().strftime(
-            config_keys.get("date_format", "%Y-%m-%d_%H%M%S"))
-
-    # User
-    if "user" not in config_keys:
-        config_keys["user"] = getpass.get_user()
-
-    # Filename
-    if "filename" not in config_keys:
-        config_keys["filename"] = os.path.splitext(os.path.basename(scene))[0]
-
-    return config_keys
-
-
-def get_package_settings(scene, config_keys, config_settings, extra_files=None):
-    """
-    Format scene path context, etc, into packager config settings
-
-    Args:
-        scene (str): Scene filepath
-        config_keys (dict): Keys used in format str substitution in
-                            config settings dict
-        config_settings (dict): Config settings dict
-        extra_files (dict): Dict of { source file glob path : dest dir }
-
-    Returns:
-        Dict of string formatted settings
-    """
-    cfg = copy.deepcopy(config_settings)
-
-    # Extra files
-    if extra_files and "extra_files" in cfg:
-        cfg["extra_files"].update(extra_files)
-    elif extra_files:
-        cfg["extra_files"] = extra_files
-
-    # Add user
-    if "user" not in cfg:
-        cfg["user"] = getpass.getuser()
-
-    # For str formatting
-    cfg_str = json.dumps(cfg)
-
-    # Keys to sub into config
-    format_keys = get_supported_keys(scene, config_keys)
-
-    # Expand package root dir first
-    package_root = Template(cfg["package_root"])
-    format_keys["package_root"] = package_root.substitute(**format_keys)
-
-    # Expand remaining settings
-    settings = Template(cfg_str)
-    result = json.loads(settings.substitute(**format_keys))
-
-    # TODO: Validate dir settings all start at package root
-
-    return result
 
 
 def get_relative_path(package_scene, package_dependency, package_root):

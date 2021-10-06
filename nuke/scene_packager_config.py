@@ -40,7 +40,6 @@ def load_scene_data(packaged_scene, package_root, source_scene):
     end = None
 
     for node in utils.parse_nodes(source_scene):
-        print(node.knob_value("name"))
         # Found root
         if "Root" == node.Class():
             root = node
