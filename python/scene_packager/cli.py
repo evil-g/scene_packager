@@ -8,45 +8,60 @@ import os
 import logging
 
 # Scene packager
-from . import api, config
+from . import api, scene_packager_config
 
 
 # Log
 LOG = logging.getLogger("scene_packager.cli")
+SP_CONFIG_NAME = "scene_packager_config.py"
 
 
 def _load_config_override(path=None):
     """
     """
     path = path or os.getenv(
-        "SCENE_PACKAGER_CONFIG",
-        os.path.expanduser("~/scene_packager_config.py")
+        "SCENE_PACKAGER_CONFIG_FILE",
+        os.path.expanduser("~/{}".format(SP_CONFIG_NAME))
     )
 
-    mod = {
-        "__file__": path,
-    }
+    # Load all scene_packager_config.py files in search path
+    paths = []
+    search_path = os.getenv("SCENE_PACKAGER_CONFIG_PATH")
+    if search_path:
+        for search_dir in search_path.split(";"):
+            target = os.path.join(search_dir, SP_CONFIG_NAME)
+            if os.path.isfile(target):
+                paths.append(target)
+    else:
+        paths = [path]
 
-    try:
-        with open(path) as f:
-            exec(compile(f.read(), f.name, "exec"), mod)
-    except IOError:
-        raise
-    except Exception:
-        raise ("Invalid override config: {}".format(path))
+    # Override general config
+    for each in paths:
 
-    for key in dir(config):
-        if key.startswith("__"):
-            continue
+        mod = {
+            "__file__": each,
+        }
 
         try:
-            value = mod[key]
-        except KeyError:
-            continue
+            with open(each) as f:
+                exec(compile(f.read(), f.name, "exec"), mod)
+        except IOError:
+            raise
+        except Exception:
+            raise ("Invalid override config: {}".format(each))
 
-        setattr(config, key, value)
+        for key in dir(scene_packager_config):
+            if key.startswith("__"):
+                continue
 
-    return path
+            try:
+                value = mod[key]
+            except KeyError:
+                continue
+
+            setattr(scene_packager_config, key, value)
+
+    return each
 
 
 def _init_backup_config():
@@ -55,12 +70,12 @@ def _init_backup_config():
     Useful for augmenting an existing value with your own config
     """
 
-    for member in dir(config):
+    for member in dir(scene_packager_config):
         if member.startswith("__"):
             continue
 
-        setattr(config, "_%s" % member,
-                getattr(config, member))
+        setattr(scene_packager_config, "_%s" % member,
+                getattr(scene_packager_config, member))
 
 
 def main():
@@ -181,8 +196,6 @@ def main():
             "Invalid subparser command: {0}".format(opts.subparser_command)
         )
 
-    # TODO Load config
-
     # Directory mode
     if os.path.isdir(opts.input_scene):
         files = []
@@ -211,6 +224,7 @@ def main():
     # ----------------------------------
     # Initialize config
     # ----------------------------------
+    _init_backup_config()
     _load_config_override(path=opts.config)
 
     # Launch UI
