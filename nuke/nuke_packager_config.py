@@ -7,60 +7,6 @@ set $SCENE_PACKAGER_CONFIG to its location.
 Any functions not overridden will use the default implementations below.
 """
 
-# Standard
-import logging
-import os
-import re
-
-# Scene packager
-import scene_packager
-import nuke_packager_utils as utils
-
-
-LOG = logging.logging.getLogger(__name__)
-
-
-def get_node_subdir(node, **kwargs):
-    """
-    Get package subdir that a node should be copied to
-
-    Returns:
-        dir str
-    """
-    if node.Class() in ["DeepWrite", "Write"]:
-        return "images/outputs/{}".format(kwargs["name"])
-
-    return "images/inputs/{}".format(kwargs["name"])
-
-
-def get_node_file_knobs(node, **kwargs):
-    """
-    Get list of knobs whose files should be copied
-
-    Returns:
-        list of knob name str
-    """
-    if node.Class() in ["Vectorfield"]:
-        return ["vfield_file"]
-
-    return ["file"]
-
-
-def exclude_node_files(node, **kwargs):
-    """
-    Determine whether a node's file, etc knobs should be ignored
-
-    Args:
-        node (nuke.Node): Nuke node
-
-    Returns:
-        bool
-    """
-    if node.Class() in ["DeepWrite", "Write"]:
-        return True
-
-    return False
-
 
 def load_scene_data(packaged_scene, package_root, source_scene):
     """
@@ -71,24 +17,33 @@ def load_scene_data(packaged_scene, package_root, source_scene):
         package_root (str): Package root path
         source_scene (str): Source scene path
     """
+    import logging
+    import os
+    import scene_packager
+    import nuke_packager_utils as utils
+
+    LOG = logging.getLogger(__name__)
+
     dep_data = {}
     root = None
     start = None
     end = None
 
     for node in utils.parse_nodes(source_scene):
-
+        print(node.knob_value("name"))
         # Found root
         if "Root" == node.Class():
             root = node
 
         # Process node files
-        if (not exclude_node_files(node)) and node.files():
+        if (not utils.exclude_node_files(node)) and node.files():
             for file in node.files():
                 # Get target file path
                 dst = scene_packager.config.get_packaged_path(
                     file,
-                    os.path.join(package_root, get_node_subdir(node.Class()))
+                    os.path.join(
+                        package_root, utils.get_node_subdir(node)
+                    )
                 )
                 rel = ""
                 if scene_packager.config.use_relative_paths():
@@ -111,10 +66,16 @@ def load_scene_data(packaged_scene, package_root, source_scene):
                 curr_start = None
                 curr_end = None
                 if file in dep_data:
-                    # Check
-                    assert(dep_data[file]["packaged_path"] == dst)
-                    if rel:
-                        assert(dep_data[file]["relative_path"] == rel)
+                    # # Check
+                    # LOG.info("packaged_path: {}".format(dst))
+                    # print("packaged_path: {}".format(dst))
+                    # print("dep_data path: {}".format(dep_data[file]["packaged_path"]))
+                    # assert(dep_data[file]["packaged_path"] == dst)
+                    # if rel:
+                    #     LOG.info("relative_path: {}".format(rel))
+                    #     print("relative_path: {}".format(rel))
+                    #     print("dep_data path: {}".format(dep_data[file]["packaged_path"]))
+                    #     assert(dep_data[file]["relative_path"] == rel)
 
                     curr_start = dep_data[file].get("start")
                     curr_end = dep_data[file].get("end")
@@ -164,26 +125,41 @@ def load_scene_data(packaged_scene, package_root, source_scene):
     if root is None:
         raise ValueError("Error: no Root node found!")
 
+    return root, dep_data
+
 
 def write_packaged_scene(source_scene, dst_scene, dep_data, root,
                          project_dir, start, end, relative_paths=False):
     """
     Write packaged scene. Can be reimplemented per application
     """
+    from builtins import bytes
+    import logging
+    import os
+    import re
+    import scene_packager
+    import nuke_packager_utils as utils
+
+    LOG = logging.getLogger(__name__)
+
     # Load backup scene text
     with open(source_scene, "r") as handle:
         scene_data = handle.read()
 
     raw_scene_data = r"{}".format(scene_data)
 
+    root_data = root.data
+    if isinstance(root_data, bytes):
+        root_data = r"%s" % root.data.decode("utf8")
+
     # TODO Better cleaning support
     # Clean root
     new_root = utils.clean_root(root._data, project_dir, start, end)
     if new_root:
         raw_scene_data = re.sub(
-            r"%s" % root.data.decode("utf8"),
+            root_data,
             r"%s" % new_root.decode("utf8"),
-            raw_scene_data.decode("utf8"),
+            raw_scene_data,
             flags=re.UNICODE).encode("utf8")
 
     # Sub new files
@@ -198,9 +174,14 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
         else:
             dst_file = data["packaged_path"]
 
+        if isinstance(file, bytes):
+            file = file.decode("utf8")
+        if isinstance(dst_file, bytes):
+            dst_file = dst_file.decode("utf8")
+
         LOG.debug("Replacing: {} {}".format(file, dst_file))
-        raw_scene_data = re.sub(r"%s" % file.decode("utf8"),
-                                r"%s" % dst_file.decode("utf8"),
+        raw_scene_data = re.sub(file,
+                                dst_file,
                                 raw_scene_data.decode("utf8"),
                                 flags=re.UNICODE).encode("utf8")
 
@@ -208,4 +189,7 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     LOG.info("Writing packaged file: {}".format(dst_scene))
     scene_packager.utils.make_dirs(os.path.dirname(dst_scene))
     with open(dst_scene, "w") as handle:
-        handle.write(raw_scene_data)
+        if isinstance(raw_scene_data, bytes):
+            handle.write(raw_scene_data.decode("utf8"))
+        else:
+            handle.write(raw_scene_data)

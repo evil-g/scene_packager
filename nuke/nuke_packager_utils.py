@@ -9,21 +9,8 @@ from scene_packager import utils
 
 # Global
 NODE_PARSE_REGEX = r"(?P<node>(?P<start>(^(?P<class>.*)\ \{))" \
-    "(?P<knobs>(?:.*\n)+)(?P<end>^(| )}$))"
+    "(?P<knobs>(?:.*\n)+)(?P<end>^(| +)}$))"
 INVALIDS = [r"^add_layer", r"^define_window_layout"]
-
-
-def get_file_knob_settings(node_class):
-    """
-    Get setting for
-
-    Returns:
-        List of knob name strs
-    """
-    config = utils.packager_settings() or {}
-    knobs = config.get("node_file_knobs", {}).get(node_class)
-    if not knobs:
-        return config.get("node_file_knobs", {}).get("default", [])
 
 
 def get_node_class(data):
@@ -70,19 +57,46 @@ def get_node_knobs(data):
     return knobs
 
 
-def get_node_dir(node_class, settings):
+def get_node_subdir(node):
     """
-    Get node dir
+    Get package subdir that a node should be copied to
+
+    Returns:
+        dir str
+    """
+    if node.Class() in ["DeepWrite", "Write"]:
+        return "images/outputs/{}".format(node.knob_value("name"))
+
+    return "images/inputs/{}".format(node.knob_value("name"))
+
+
+def get_node_file_knobs(node_class):
+    """
+    Get list of knobs whose files should be copied
+
+    Returns:
+        list of knob name str
+    """
+    if node_class in ["Vectorfield"]:
+        return ["vfield_file"]
+
+    return ["file"]
+
+
+def exclude_node_files(node):
+    """
+    Determine whether a node's file, etc knobs should be ignored
 
     Args:
-        node_class (str): Node class
-        settings (dict): Packager settings
-    """
-    for subdir, classes in settings.get("subdirs", {}).items():
-        if node_class in classes:
-            return subdir
+        node (nuke.Node): Nuke node
 
-    return utils.clean_path(settings["default_subdir"])
+    Returns:
+        bool
+    """
+    if node.Class() in ["DeepWrite", "Write"]:
+        return True
+
+    return False
 
 
 def _parse_nodes(lines):
@@ -165,9 +179,12 @@ def clean_root(root_data, pdir, start, end):
         if match:
             before = inserted[0:match.end()]
             after = inserted[match.end():]
-            inserted = r"%s" % before.decode("utf8") + \
-                r"%s" % pdir.decode("utf8") + \
-                r"%s" % after.decode("utf8")
+            try:
+                inserted = r"%s" % before.decode("utf8") + \
+                    r"%s" % pdir.decode("utf8") + \
+                    r"%s" % after.decode("utf8")
+            except AttributeError:
+                inserted = r"%s" % before + r"%s" % pdir + r"%s" % after
 
     # Root start
     if "first_frame" not in inserted:
@@ -241,7 +258,7 @@ class ParsedNode(object):
         Returns: List of file path str
         """
         files = []
-        for knob in get_file_knob_settings(self.Class()):
+        for knob in get_node_file_knobs(self.Class()):
             try:
                 files.append(self.knob_value(knob))
             except KeyError:
