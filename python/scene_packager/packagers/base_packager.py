@@ -390,7 +390,7 @@ class Packager(object):
         self.write_filecopy_metadata()
 
         # Override config pre-package
-        scene_packager_config.pre_package(self.scene, dryrun=self.mode)
+        scene_packager_config.pre_package(self.scene, mode=self.mode)
 
     def package(self):
         """
@@ -411,7 +411,7 @@ class Packager(object):
         Post package ops
         Override can be implemented in user config
         """
-        scene_packager_config.post_package(self.scene, dryrun=self.mode)
+        scene_packager_config.post_package(self.scene, mode=self.mode)
 
     def run(self, overwrite=False, mode=0):
         """
