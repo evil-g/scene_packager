@@ -197,6 +197,7 @@ def clean_root(root_data, pdir, start, end):
             inserted = r"%s" % before + \
                 r"%s" % first_frame + \
                 r"%s" % after
+
     # Root end
     if "last_frame" not in inserted:
         match = re.search("Root \{\n", inserted)

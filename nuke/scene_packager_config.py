@@ -142,7 +142,6 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     """
     Write packaged scene. Can be reimplemented per application
     """
-    from builtins import bytes
     import logging
     import os
     import re
@@ -155,21 +154,27 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     with open(source_scene, "r") as handle:
         scene_data = handle.read()
 
-    raw_scene_data = r"{}".format(scene_data)
+    raw_scene_data = r"{0}".format(scene_data)
 
-    root_data = root.data
-    if isinstance(root_data, bytes):
-        root_data = r"%s" % root.data.decode("utf8")
-
-    # TODO Better cleaning support
     # Clean root
-    new_root = utils.clean_root(root._data, project_dir, start, end)
+    new_root = utils.clean_root(
+        root.data,
+        project_dir,
+        start,
+        end
+    )
     if new_root:
-        raw_scene_data = re.sub(
-            root_data,
-            r"%s" % new_root.decode("utf8"),
-            raw_scene_data,
-            flags=re.UNICODE).encode("utf8")
+        match = re.search(r"Root \{\n.*(| +)\}$", raw_scene_data)
+        if match:
+            raw_scene_data = re.sub(
+                re.escape(root.data),
+                new_root.decode("utf8"),
+                raw_scene_data,
+                flags=re.UNICODE
+            )
+        # Add new root
+        else:
+            raw_scene_data += "\n" + new_root.decode("utf8")
 
     # Sub new files
     for file, data in dep_data.items():
@@ -183,16 +188,11 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
         else:
             dst_file = data["packaged_path"]
 
-        if isinstance(file, bytes):
-            file = file.decode("utf8")
-        if isinstance(dst_file, bytes):
-            dst_file = dst_file.decode("utf8")
-
         LOG.debug("Replacing: {} {}".format(file, dst_file))
         raw_scene_data = re.sub(file,
                                 dst_file,
-                                raw_scene_data.decode("utf8"),
-                                flags=re.UNICODE).encode("utf8")
+                                raw_scene_data,
+                                flags=re.UNICODE)
 
     # Write
     LOG.info("Writing packaged file: {}".format(dst_scene))

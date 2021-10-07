@@ -486,6 +486,7 @@ class Packager(object):
                 self.filecopy_metadata, log_level=self.log.level
             )
         else:
+            self.log.newline()
             self.log.info(
                 "Skipping file copy for packager mode [{}]".format(self.mode)
             )
