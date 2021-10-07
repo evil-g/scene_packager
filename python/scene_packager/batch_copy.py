@@ -7,9 +7,13 @@ import argparse
 import errno
 import glob
 import json
+import logging
 import os
 import re
 import subprocess
+
+# Scene packager
+from . import utils
 
 
 def parse_args():
@@ -78,7 +82,7 @@ def clean_path(path):
     return path
 
 
-def copy_files(data, force=False):
+def copy_files(data, force=False, log_level=logging.WARNING):
     """
     Copy files
 
@@ -88,6 +92,9 @@ def copy_files(data, force=False):
 
     Returns: None
     """
+    log = utils.get_logger(__name__, level=log_level)
+    log.info("Starting file copy...")
+
     # Copy each
     failed = []
     FRAME_REGEX = r"(?<=[_\.])(?P<frame>#+|\d+|\%\d*d)$"
@@ -166,8 +173,12 @@ def copy_files(data, force=False):
                 failed.append("Posix not implemented: {0}".format(src))
                 continue
 
-            print("Copying {0} files...".format(len(globbed)))
-            print(cmd)
+            # Logging
+            if len(globbed) > 1:
+                log.info("Copying {0} files...".format(len(globbed)))
+            else:
+                log.info("Copying {0} file...".format(len(globbed)))
+            log.info(cmd)
 
             # Run copy
             proc = subprocess.Popen(cmd,
@@ -179,13 +190,14 @@ def copy_files(data, force=False):
             stdout, stderr = proc.communicate()
 
             # TODO outputs
-            # print(stdout)
-            print(stderr)
-            print(proc.returncode)
+            log.debug(stdout)
+            if stderr:
+                log.error(stderr)
+            log.debug(proc.returncode)
 
             if to_rename:
-                print("-" * 50)
-                print("Renaming: {0} --> {1}".format(clean_path(
+                log.info("-" * 50)
+                log.info("Renaming: {0} --> {1}".format(clean_path(
                     os.path.join(os.path.dirname(dst), os.path.basename(src))),
                     dst)
                 )
@@ -222,17 +234,19 @@ def copy_files(data, force=False):
 
             # Check
             if glob.glob(dst):
-                print("Ok!")
+                log.info("Ok!")
             else:
                 failed.append("Failed to copy files: {0}".format(dst_dir))
         else:
             failed.append("No files found: {0}".format(src))
 
     if failed:
-        print("-" * 50)
-        print("Copy errors:")
-        print("\n".join(failed))
+        log.error("-" * 50)
+        log.error("Copy errors:")
+        log.error("\n".join(failed))
         raise RuntimeError("{0} errors copying files".format(len(failed)))
+    else:
+        log.info("Copy finished!")
 
 
 def main():

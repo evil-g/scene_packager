@@ -148,9 +148,18 @@ def main():
         )
     )
 
+    # Overwrite existing
+    parser_run.add_argument(
+        "--rp", "--relative", dest="relative_path", action="store_true",
+        help=(
+            "If True, write packaged scene file with relative paths. "
+            "Eg: '../images/plate_%04d.exr'"
+        )
+    )
+
     # Testing modes
     parser_run.add_argument(
-        "--no-copy", dest="no_copy", action="store_true",
+        "--nocopy", dest="nocopy", action="store_true",
         help=("Runs packager without packaging the file dependencies. "
               "Writes packaged scene with updated paths and metadata. "
               "Prints a log of source/dest paths for file "
@@ -164,7 +173,7 @@ def main():
     parser_run.add_argument(
         "-v", "--verbose", dest="verbose", action="count", default=0,
         help=("Increase verbosity of Scene Packager. "
-              "Use -v for extra file copy info, -vv for debug messages.")
+              "Use -v for basic info, -vv for debug messages.")
     )
     # Scene Packager version info
     parser_run.add_argument(
@@ -196,7 +205,7 @@ def main():
             "Invalid subparser command: {0}".format(opts.subparser_command)
         )
 
-    if opts.dryrun and opts.no_copy:
+    if opts.dryrun and opts.nocopy:
         raise RuntimeError(
             "Argument conflict. Cannot use --dryrun and --no-copy "
             "at the same time."
@@ -235,7 +244,7 @@ def main():
     # Dryrun level
     if opts.dryrun:
         mode = 2
-    elif opts.no_copy:
+    elif opts.nocopy:
         mode = 1
     else:
         mode = 0

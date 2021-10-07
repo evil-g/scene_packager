@@ -2,6 +2,7 @@
 # Standard
 import logging
 import os
+import pprint
 
 # Scene packager
 from scene_packager import batch_copy, scene_packager_config, utils
@@ -22,7 +23,9 @@ class Packager(object):
             raise ValueError("Scene does not exist!")
 
         # Log
-        self.log = logging.getLogger("scene_packager")
+        self.log = utils.get_logger(__name__, settings.get("verbose", 0))
+        # Set log verbosity
+        self.set_verbosity(settings.get("verbose", 0))
 
         # Mode
         # Available levels:
@@ -155,7 +158,25 @@ class Packager(object):
                 type(mode))
             )
 
+        if 0 == mode:
+            self.log.debug("Package mode==0 (normal mode)")
+        elif 1 == mode:
+            self.log.debug("Package mode==1 (nocopy mode)")
+        elif 2 <= mode:
+            self.log.debug("Package mode<=2 (debug mode)")
+
         self.mode = mode
+
+    def set_verbosity(self, verbose=0):
+        """
+        Set logging level
+        """
+        if 0 == verbose:
+            self.log.setLevel(logging.WARNING)
+        elif 1 == verbose:
+            self.log.setLevel(logging.INFO)
+        elif 2 <= verbose:
+            self.log.setLevel(logging.DEBUG)
 
     @property
     def package_root(self):
@@ -270,10 +291,16 @@ class Packager(object):
         # TODO Logging
         # print(self.dep_data)
 
+        self.log.debug("")
+        self.log.debug("Finding scene file dependencies...\n")
+
         for src_path, data in self.dep_data.items():
             # Glob style source/dst for each node
             src_glob = utils.get_frame_glob_path(src_path)
+            self.log.debug("Source frame sequence: {}".format(src_glob))
+
             dst_glob = utils.get_frame_glob_path(data["packaged_path"])
+            self.log.debug("Packaged frame sequence: {}\n\n".format(dst_glob))
 
             # Specific frames
             frames = []
@@ -293,16 +320,22 @@ class Packager(object):
         for src_glob, dst in self.settings.get("extra_files", {}).items():
             # Glob style for dst
             dst_glob = utils.get_frame_glob_path(dst)
+            self.log.debug("Extra file sequence: {}\n\n".format(dst_glob))
 
             # Update metadata
             if src_glob in to_copy:
-                self.log.info("Skipping extra file copy. Already found in "
-                              "dependency list: {0}".format(src_glob))
+                self.log.debug("Skipping extra file copy. Already found in "
+                               "dependency list: {0}".format(src_glob))
             else:
                 to_copy[src_glob] = {
                     "dst": dst_glob,
                     "frames": []
                 }
+
+        self.log.debug(
+            "Found {} file dependencies".format(len(to_copy.items()))
+        )
+        self.log.debug("")
 
         self.filecopy_metadata = to_copy
         return self.filecopy_metadata
@@ -328,9 +361,13 @@ class Packager(object):
                                "start": start_frame,
                                "end": end_frame} }
         """
+        self.log.debug("Loading scene data...")
+
         self.root, self.dep_data = scene_packager_config.load_scene_data(
             self.packaged_scene, self.package_root, self.scene
         )
+
+        self.log.debug("Finished.")
 
     def dependency_files(self):
         """
@@ -346,21 +383,43 @@ class Packager(object):
         Save file data for file metadata to be used by file copy
         """
         if self.mode < 2:
+            self.log.info("Writing file copy metadata: {}".format(
+                self.package_filecopy_metadata_path)
+            )
+
             utils.write_filecopy_metadata(self.get_filecopy_metadata(),
                                           self.package_filecopy_metadata_path)
+        # Dryrun mode
+        else:
+            filecopy_data = self.get_filecopy_metadata()
+            self.log.debug("File copy metadata:")
+            self.log.debug(pprint.pformat(filecopy_data, indent=4))
 
     def write_package_metadata(self):
         """
         Save packager settings to metadata path
         """
-        utils.write_package_metadata(
-            self.package_metadata(), self.package_metadata_path
-        )
+        if self.mode < 2:
+            self.log.info("Writing package metadata: {}".format(
+                self.package_metadata_path)
+            )
+
+            utils.write_package_metadata(
+                self.package_metadata(), self.package_metadata_path
+            )
+        # Dryrun mode
+        else:
+            self.log.debug("Package metadata:")
+            self.log.debug(
+                pprint.pformat(self.package_metadata(), indent=4)
+            )
 
     def write_packaged_scene(self):
         """
         Write packaged scene with updated filepaths
         """
+        self.log.info("Writing packaged scene: {}".format(self.packaged_scene))
+
         return scene_packager_config.write_packaged_scene(
             self.source_scene_backup,
             self.packaged_scene,
@@ -379,10 +438,11 @@ class Packager(object):
         2. Export package metadata
         3. Export file copy metadata
         """
+        self.log.debug("Start pre_package")
+
         # Copy original scene to package backup dir
-        self.log.info("Making backup of original scene: {} --> {}".format(
-            self.scene, self.source_scene_backup)
-        )
+        self.log.info("Original scene: {}".format(self.scene))
+        self.log.info("  Backup scene: {}".format(self.source_scene_backup))
         utils.copy_file(self.scene, self.source_scene_backup)
 
         # Write packager metadata
@@ -392,10 +452,14 @@ class Packager(object):
         # Override config pre-package
         scene_packager_config.pre_package(self.scene, mode=self.mode)
 
+        self.log.debug("End pre_package")
+
     def package(self):
         """
         Main package ops
         """
+        self.log.debug("Start packaging")
+
         # Repath scene
         # Modes 0, 1
         if self.mode < 2:
@@ -404,14 +468,26 @@ class Packager(object):
         # Copy file dependencies
         # Mode 0 only
         if 0 == self.mode:
-            batch_copy.copy_files(self.filecopy_metadata)
+            batch_copy.copy_files(
+                self.filecopy_metadata, log_level=self.log.level
+            )
+        else:
+            self.log.info(
+                "Skipping file copy for packager mode [{}]".format(self.mode)
+            )
+
+        self.log.debug("End packaging")
 
     def post_package(self):
         """
         Post package ops
         Override can be implemented in user config
         """
+        self.log.debug("Start post_package")
+
         scene_packager_config.post_package(self.scene, mode=self.mode)
+
+        self.log.debug("End post_package")
 
     def run(self, overwrite=False, mode=0):
         """
@@ -433,19 +509,20 @@ class Packager(object):
         # Already exists
         if exists and not overwrite:
             raise RuntimeError(
-                "Package already exists at: {0}".format(self.package_root))
+                "Package already exists at: {0}".format(self.package_root)
+            )
         # Remove existing (skip on dryrun/mode 2)
         elif exists and overwrite and self.mode < 2:
             self.log.info(
-                "Removing existing package... overwrite={0}".format(overwrite))
-            packager_tmp = self.settings.get("package_tmp_dir")
+                "Removing existing package... overwrite={0}".format(overwrite)
+            )
+            packager_tmp = scene_packager_config.package_tmp_dir(self.scene)
             utils.remove_existing_package(
-                self.package_root, tmp_dir=packager_tmp, subproc=True)
+                self.package_root, tmp_dir=packager_tmp, subproc=True
+            )
 
         # Load scene data
         self.load_scene_data()
-
-        self.log.info("Running scene packager... mode={0}".format(mode))
 
         # Prep package
         self.pre_package()
@@ -455,3 +532,8 @@ class Packager(object):
 
         # Post packaging
         self.post_package()
+
+        # Finished!
+        self.log.info("")
+        self.log.info("Package complete!")
+        self.log.info("Completed package root: {}".format(self.package_root))

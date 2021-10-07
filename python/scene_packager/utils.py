@@ -27,6 +27,31 @@ FRAME_PAD_REGEX = r"(?<=[_\.])(?P<frame>#+|\d+|\%\d*d)$"
 LOG = logging.getLogger("scene_packager.utils")
 
 
+def get_logger(logger_name, level=None):
+    """
+    Get logger
+    """
+    log = logging.getLogger(logger_name)
+    log.setLevel(level)
+    log.propagate = False
+
+    if not log.handlers:
+        handler = logging.StreamHandler()
+        handler.setLevel(level)
+
+        if level == logging.DEBUG:
+            formatter = logging.Formatter(
+                "%(name)-15s %(levelname)-8s: %(message)s"
+            )
+        else:
+            formatter = logging.Formatter("%(levelname)-8s: %(message)s")
+
+        handler.setFormatter(formatter)
+        log.addHandler(handler)
+
+    return log
+
+
 def get_frame_glob_path(filepath):
     """
     Get glob style path for frames
@@ -42,7 +67,6 @@ def get_frame_glob_path(filepath):
 
     glob_base = re.sub(FRAME_PAD_REGEX, "*", base)
     seq_path = glob_base + ext
-    LOG.debug("Found frame sequence: {0}".format(seq_path))
 
     # Verify glob
     glob(seq_path)
