@@ -168,6 +168,17 @@ def project_directory(packaged_scene, package_root, source_scene):
         packaged_scene (str): Packaged scene path
         package_root (str): Package root path
         source_scene (str): Source scene path
+
+    Returns:
+        str
+    """
+    raise NotImplementedError()
+
+
+def get_scene_frange(scene):
+    """
+    Returns:
+        (start (int), end (int)) tuple
     """
     raise NotImplementedError()
 
@@ -181,6 +192,8 @@ def load_scene_data(packaged_scene, package_root, source_scene):
         packaged_scene (str): Packaged scene path
         package_root (str): Package root path
         source_scene (str): Source scene path
+
+    Returns:
     """
     raise NotImplementedError()
 
@@ -190,6 +203,8 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     """
     Implement per DCC
     Write packaged scene. Can be reimplemented per application
+
+    Returns:
     """
     raise NotImplementedError()
 

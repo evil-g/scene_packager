@@ -43,7 +43,7 @@ def log_blank_line(self, count=1):
     self.addHandler(self.output_handler)
 
 
-def get_logger(logger_name, level=None):
+def get_logger(logger_name, level=logging.WARNING):
     """
     Get logger
 

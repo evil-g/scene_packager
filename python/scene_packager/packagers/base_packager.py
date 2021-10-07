@@ -103,6 +103,12 @@ class Packager(object):
             self.packaged_scene, self.package_root, self.scene
         )
 
+        start, end = scene_packager_config.get_scene_frange(self.scene)
+        self.settings["start"] = start
+        self.settings["end"] = end
+        self.scene_start = start
+        self.scene_end = end
+
         # Overrides
         for key, val in settings.items():
             if val is not None:
@@ -370,9 +376,10 @@ class Packager(object):
         """
         self.log.debug("Loading scene data...")
 
-        self.root, self.dep_data = scene_packager_config.load_scene_data(
-            self.packaged_scene, self.package_root, self.scene
-        )
+        self.root, self.dep_data, self.scene_start, self.scene_end = \
+            scene_packager_config.load_scene_data(
+                self.packaged_scene, self.package_root, self.scene
+            )
 
         self.log.debug("Finished.")
 

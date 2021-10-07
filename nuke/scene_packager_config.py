@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Nuke scene package config, default implementation.
+Default implementation of Nuke scene packager config.
 
 To override, create your own config.py and
 set $SCENE_PACKAGER_CONFIG to its location.
@@ -13,9 +13,30 @@ def project_directory(packaged_scene, package_root, source_scene):
     Project directory to use in scene settings
 
     Returns:
-        str
+        Project directory str
     """
     return " project_directory \"[python nuke.script_directory()]\"\n"
+
+
+def get_scene_frange(scene):
+    """
+    Get start/end for scene
+
+    Raises:
+        RuntimeError if Root node cannot be found
+
+    Returns:
+        (start (int), end (int)) tuple
+    """
+    import nuke_packager_utils as utils
+
+    for node in utils.parse_nodes(scene):
+        if "Root" == node.Class():
+            start = int(node.knob_value("first_frame"))
+            end = int(node.knob_value("last_frame"))
+            return start, end
+
+    raise RuntimeError("Could not find Root node in ")
 
 
 def load_scene_data(packaged_scene, package_root, source_scene):
@@ -27,12 +48,11 @@ def load_scene_data(packaged_scene, package_root, source_scene):
         package_root (str): Package root path
         source_scene (str): Source scene path
     """
-    import logging
     import os
     import scene_packager
     import nuke_packager_utils as utils
 
-    LOG = logging.getLogger(__name__)
+    LOG = scene_packager.utils.get_logger(__name__)
 
     dep_data = {}
     root = None
@@ -134,7 +154,7 @@ def load_scene_data(packaged_scene, package_root, source_scene):
     if root is None:
         raise ValueError("Error: no Root node found!")
 
-    return root, dep_data
+    return root, dep_data, start, end
 
 
 def write_packaged_scene(source_scene, dst_scene, dep_data, root,
@@ -142,13 +162,12 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     """
     Write packaged scene. Can be reimplemented per application
     """
-    import logging
     import os
     import re
     import scene_packager
     import nuke_packager_utils as utils
 
-    LOG = logging.getLogger(__name__)
+    LOG = scene_packager.utils.get_logger(__name__)
 
     # Load backup scene text
     with open(source_scene, "r") as handle:
@@ -164,17 +183,15 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
         end
     )
     if new_root:
-        match = re.search(r"Root \{\n.*(| +)\}$", raw_scene_data)
-        if match:
-            raw_scene_data = re.sub(
-                re.escape(root.data),
-                new_root.decode("utf8"),
-                raw_scene_data,
-                flags=re.UNICODE
-            )
-        # Add new root
-        else:
-            raw_scene_data += "\n" + new_root.decode("utf8")
+        raw_scene_data = re.sub(
+            re.escape(root.data),
+            new_root.decode("utf8"),
+            raw_scene_data,
+            flags=re.UNICODE
+        )
+
+    if "project_directory" not in raw_scene_data:
+        LOG.error("project_directory not found in output scene data.")
 
     # Sub new files
     for file, data in dep_data.items():
