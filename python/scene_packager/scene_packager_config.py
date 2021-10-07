@@ -197,7 +197,7 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
 # -------------------------------------------------------
 # Pre/post hooks
 # -------------------------------------------------------
-def pre_package(scene):
+def pre_package(scene, mode=0):
     """
     Run before packaging
     Implementation optional
@@ -205,7 +205,7 @@ def pre_package(scene):
     pass
 
 
-def post_package(scene):
+def post_package(scene, mode=0):
     """
     Run after packaging
     Implementation optional

@@ -152,13 +152,13 @@ def main():
     parser_run.add_argument(
         "--no-copy", dest="no_copy", action="store_true",
         help=("Runs packager without packaging the file dependencies. "
-              "Outputs packaged scene with updated paths and package "
-              "metadata. Prints a log of source/dest paths for file "
+              "Writes packaged scene with updated paths and metadata. "
+              "Prints a log of source/dest paths for file "
               "dependencies, but does not actually copy them.")
     )
     parser_run.add_argument(
         "--dryrun", dest="dryrun", action="store_true",
-        help=("Dryrun mode. Prints al log of source/dest file dependencies.")
+        help=("Dryrun mode. Prints info and source/dest file dependencies.")
     )
     # Verbosity
     parser_run.add_argument(
@@ -196,6 +196,12 @@ def main():
             "Invalid subparser command: {0}".format(opts.subparser_command)
         )
 
+    if opts.dryrun and opts.no_copy:
+        raise RuntimeError(
+            "Argument conflict. Cannot use --dryrun and --no-copy "
+            "at the same time."
+        )
+
     # Directory mode
     if os.path.isdir(opts.input_scene):
         files = []
@@ -219,13 +225,20 @@ def main():
         LOG.info("Continue packaging {} scene files?".format(len(files)))
 
     # TODO extra files subdir
-    # TODO dryrun vs. nocopy
 
     # ----------------------------------
     # Initialize config
     # ----------------------------------
     _init_backup_config()
     _load_config_override(path=opts.config)
+
+    # Dryrun level
+    if opts.dryrun:
+        mode = 2
+    elif opts.no_copy:
+        mode = 1
+    else:
+        mode = 0
 
     # Launch UI
     if opts.ui:
@@ -238,4 +251,4 @@ def main():
                            vars(opts),
                            extra_files=opts.extra_files,
                            overwrite=opts.overwrite,
-                           dryrun=opts.dryrun)
+                           mode=mode)

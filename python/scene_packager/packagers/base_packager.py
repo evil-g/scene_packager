@@ -24,6 +24,17 @@ class Packager(object):
         # Log
         self.log = logging.getLogger("scene_packager")
 
+        # Mode
+        # Available levels:
+        #     Level 0: (Default) Executes full packaging.
+
+        #     Level 1: No-copy mode.
+        #              Repaths packaged scene, writes metadata.
+        #              Does not execute file copy.
+
+        #     Level 2: Dryrun on. Debug messages only.
+        self.mode = 0
+
         self.scene = None
         self.settings = {}
         self.extra_files = None
@@ -120,6 +131,31 @@ class Packager(object):
         # Load file text
         with open(self.scene, "r") as handle:
             self._scene_txt = handle.read()
+
+    def set_mode(self, mode):
+        """
+        Set packager mode
+
+        Available levels:
+            Level 0: (Default) Executes full packaging.
+
+            Level 1: No-copy mode.
+                     Repaths packaged scene, writes metadata.
+                     Does not execute file copy.
+
+            Level 2: Dryrun on. Debug messages only.
+
+        Args:
+            mode (int)
+
+        Returns: None
+        """
+        if not isinstance(mode, int):
+            raise TypeError("Invalid mode type: '{}'. Must be int".format(
+                type(mode))
+            )
+
+        self.mode = mode
 
     @property
     def package_root(self):
@@ -309,9 +345,9 @@ class Packager(object):
         """
         Save file data for file metadata to be used by file copy
         """
-        utils.write_filecopy_metadata(
-            self.get_filecopy_metadata(), self.package_filecopy_metadata_path
-        )
+        if self.mode < 2:
+            utils.write_filecopy_metadata(self.get_filecopy_metadata(),
+                                          self.package_filecopy_metadata_path)
 
     def write_package_metadata(self):
         """
@@ -354,26 +390,30 @@ class Packager(object):
         self.write_filecopy_metadata()
 
         # Override config pre-package
-        scene_packager_config.pre_package(self.scene)
+        scene_packager_config.pre_package(self.scene, dryrun=self.mode)
 
     def package(self):
         """
         Main package ops
         """
         # Repath scene
-        self.write_packaged_scene()
+        # Modes 0, 1
+        if self.mode < 2:
+            self.write_packaged_scene()
 
         # Copy file dependencies
-        batch_copy.copy_files(self.filecopy_metadata)
+        # Mode 0 only
+        if 0 == self.mode:
+            batch_copy.copy_files(self.filecopy_metadata)
 
     def post_package(self):
         """
         Post package ops
         Override can be implemented in user config
         """
-        scene_packager_config.post_package(self.scene)
+        scene_packager_config.post_package(self.scene, dryrun=self.mode)
 
-    def run(self, overwrite=False, dryrun=False):
+    def run(self, overwrite=False, mode=0):
         """
         Run packager
 
@@ -383,17 +423,19 @@ class Packager(object):
         Args:
             overwrite (bool): If True, ok to overwrite existing
                               package dir
-            dryrun (bool): If True, do not submit copy job,
+            mode (bool): If True, do not submit copy job,
                         only write packaged scene and metadata.
         """
+        self.set_mode(mode)
+
         # Check for existing package
         exists = utils.check_available_dir(self.package_root)
         # Already exists
         if exists and not overwrite:
             raise RuntimeError(
                 "Package already exists at: {0}".format(self.package_root))
-        # Remove existing (skip on dryrun)
-        elif exists and overwrite and not dryrun:
+        # Remove existing (skip on dryrun/mode 2)
+        elif exists and overwrite and self.mode < 2:
             self.log.info(
                 "Removing existing package... overwrite={0}".format(overwrite))
             packager_tmp = self.settings.get("package_tmp_dir")
@@ -403,7 +445,7 @@ class Packager(object):
         # Load scene data
         self.load_scene_data()
 
-        self.log.info("Running scene packager... dryrunrun={0}".format(dryrun))
+        self.log.info("Running scene packager... mode={0}".format(mode))
 
         # Prep package
         self.pre_package()
