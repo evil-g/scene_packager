@@ -9,6 +9,7 @@ import glob
 import json
 import logging
 import os
+import pprint
 import re
 import subprocess
 
@@ -93,6 +94,7 @@ def copy_files(data, force=False, log_level=logging.WARNING):
     Returns: None
     """
     log = utils.get_logger(__name__, level=log_level)
+    log.newline()
     log.info("Starting file copy...")
 
     # Copy each
@@ -174,6 +176,7 @@ def copy_files(data, force=False, log_level=logging.WARNING):
                 continue
 
             # Logging
+            log.newline()
             if len(globbed) > 1:
                 log.info("Copying {0} files...".format(len(globbed)))
             else:
@@ -189,14 +192,14 @@ def copy_files(data, force=False, log_level=logging.WARNING):
 
             stdout, stderr = proc.communicate()
 
-            # TODO outputs
+            # Logging
             log.debug(stdout)
             if stderr:
                 log.error(stderr)
-            log.debug(proc.returncode)
+            log.debug("Return code: {}".format(proc.returncode))
 
+            # Rename
             if to_rename:
-                log.info("-" * 50)
                 log.info("Renaming: {0} --> {1}".format(clean_path(
                     os.path.join(os.path.dirname(dst), os.path.basename(src))),
                     dst)
@@ -241,11 +244,13 @@ def copy_files(data, force=False, log_level=logging.WARNING):
             failed.append("No files found: {0}".format(src))
 
     if failed:
+        log.newline()
         log.error("-" * 50)
         log.error("Copy errors:")
         log.error("\n".join(failed))
         raise RuntimeError("{0} errors copying files".format(len(failed)))
     else:
+        log.newline()
         log.info("Copy finished!")
 
 

@@ -291,16 +291,20 @@ class Packager(object):
         # TODO Logging
         # print(self.dep_data)
 
-        self.log.debug("")
-        self.log.debug("Finding scene file dependencies...\n")
+        if self.log.level == logging.DEBUG:
+            self.log.newline()
+        self.log.debug("Finding scene file dependencies...")
 
         for src_path, data in self.dep_data.items():
+            if self.log.level == logging.DEBUG:
+                self.log.newline()
+
             # Glob style source/dst for each node
             src_glob = utils.get_frame_glob_path(src_path)
             self.log.debug("Source frame sequence: {}".format(src_glob))
 
             dst_glob = utils.get_frame_glob_path(data["packaged_path"])
-            self.log.debug("Packaged frame sequence: {}\n\n".format(dst_glob))
+            self.log.debug("Packaged frame sequence: {}".format(dst_glob))
 
             # Specific frames
             frames = []
@@ -318,9 +322,12 @@ class Packager(object):
 
         # Add extra files
         for src_glob, dst in self.settings.get("extra_files", {}).items():
+            if self.log.level == logging.DEBUG:
+                self.log.newline()
+
             # Glob style for dst
             dst_glob = utils.get_frame_glob_path(dst)
-            self.log.debug("Extra file sequence: {}\n\n".format(dst_glob))
+            self.log.debug("Extra file sequence: {}".format(dst_glob))
 
             # Update metadata
             if src_glob in to_copy:
@@ -332,10 +339,10 @@ class Packager(object):
                     "frames": []
                 }
 
-        self.log.debug(
+        self.log.newline()
+        self.log.info(
             "Found {} file dependencies".format(len(to_copy.items()))
         )
-        self.log.debug("")
 
         self.filecopy_metadata = to_copy
         return self.filecopy_metadata
@@ -382,10 +389,11 @@ class Packager(object):
         """
         Save file data for file metadata to be used by file copy
         """
+        self.log.newline()
+
         if self.mode < 2:
-            self.log.info("Writing file copy metadata: {}".format(
-                self.package_filecopy_metadata_path)
-            )
+            self.log.info("Writing file copy metadata:")
+            self.log.info(self.package_filecopy_metadata_path)
 
             utils.write_filecopy_metadata(self.get_filecopy_metadata(),
                                           self.package_filecopy_metadata_path)
@@ -399,10 +407,11 @@ class Packager(object):
         """
         Save packager settings to metadata path
         """
+        self.log.newline()
+
         if self.mode < 2:
-            self.log.info("Writing package metadata: {}".format(
-                self.package_metadata_path)
-            )
+            self.log.info("Writing package metadata:")
+            self.log.info(self.package_metadata_path)
 
             utils.write_package_metadata(
                 self.package_metadata(), self.package_metadata_path
@@ -418,7 +427,9 @@ class Packager(object):
         """
         Write packaged scene with updated filepaths
         """
-        self.log.info("Writing packaged scene: {}".format(self.packaged_scene))
+        self.log.newline()
+        self.log.info("Writing packaged scene:")
+        self.log.info(self.packaged_scene)
 
         return scene_packager_config.write_packaged_scene(
             self.source_scene_backup,
@@ -439,10 +450,13 @@ class Packager(object):
         3. Export file copy metadata
         """
         self.log.debug("Start pre_package")
+        self.log.info("Original scene:")
+        self.log.info(self.scene)
+        self.log.newline()
+        self.log.info("Backup scene:")
+        self.log.info(self.source_scene_backup)
 
         # Copy original scene to package backup dir
-        self.log.info("Original scene: {}".format(self.scene))
-        self.log.info("  Backup scene: {}".format(self.source_scene_backup))
         utils.copy_file(self.scene, self.source_scene_backup)
 
         # Write packager metadata
@@ -534,6 +548,8 @@ class Packager(object):
         self.post_package()
 
         # Finished!
-        self.log.info("")
+        self.log.newline()
+        self.log.info("*" * 50)
         self.log.info("Package complete!")
         self.log.info("Completed package root: {}".format(self.package_root))
+        self.log.info("*" * 50)

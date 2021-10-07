@@ -148,15 +148,6 @@ def main():
         )
     )
 
-    # Overwrite existing
-    parser_run.add_argument(
-        "--rp", "--relative", dest="relative_path", action="store_true",
-        help=(
-            "If True, write packaged scene file with relative paths. "
-            "Eg: '../images/plate_%04d.exr'"
-        )
-    )
-
     # Testing modes
     parser_run.add_argument(
         "--nocopy", dest="nocopy", action="store_true",
@@ -172,7 +163,7 @@ def main():
     # Verbosity
     parser_run.add_argument(
         "-v", "--verbose", dest="verbose", action="count", default=0,
-        help=("Increase verbosity of Scene Packager. "
+        help=("Increase verbosity of Scene Packager.\n"
               "Use -v for basic info, -vv for debug messages.")
     )
     # Scene Packager version info

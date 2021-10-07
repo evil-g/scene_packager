@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 # Standard
 import collections
-import copy
 from datetime import datetime
 import errno
-import getpass
 from glob import glob
 import json
 import logging
@@ -12,10 +10,10 @@ import os
 import platform
 import re
 import shutil
-from string import Template
 import subprocess
 import tempfile
 import traceback
+import types
 
 
 # Globals
@@ -27,15 +25,40 @@ FRAME_PAD_REGEX = r"(?<=[_\.])(?P<frame>#+|\d+|\%\d*d)$"
 LOG = logging.getLogger("scene_packager.utils")
 
 
+def log_blank_line(self, count=1):
+    """
+    Log x number of blank lines
+    """
+    # Switch to blank handler
+    self.removeHandler(self.output_handler)
+    self.addHandler(self.blank_handler)
+
+    # Output lines
+    for i in range(count):
+        self.info("")
+
+    # Switch to output handler
+    self.removeHandler(self.blank_handler)
+    self.addHandler(self.output_handler)
+
+
 def get_logger(logger_name, level=None):
     """
     Get logger
+
+    Args:
+        logger_name (str): Logger name
+        level (int): Logger level (logging.WARNING, etc)
+
+    Returns:
+        Logger obj
     """
     log = logging.getLogger(logger_name)
     log.setLevel(level)
     log.propagate = False
 
     if not log.handlers:
+        # Add output handler
         handler = logging.StreamHandler()
         handler.setLevel(level)
 
@@ -48,6 +71,16 @@ def get_logger(logger_name, level=None):
 
         handler.setFormatter(formatter)
         log.addHandler(handler)
+
+        # Add blank line handler
+        blank_handler = logging.StreamHandler()
+        blank_handler.setLevel(level)
+        blank_handler.setFormatter(logging.Formatter(fmt=""))
+
+        # Add log.newline() method
+        log.output_handler = handler
+        log.blank_handler = blank_handler
+        log.newline = types.MethodType(log_blank_line, log)
 
     return log
 
