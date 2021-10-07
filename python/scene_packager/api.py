@@ -16,7 +16,7 @@ def get_scene_packager(scene, config_keys, extra_files=None):
 
 
 def package_scene(scene, config_keys, extra_files=None, overwrite=False,
-                  dryrun=False):
+                  mode=False):
     """
     Package the given scene path
     """
@@ -24,11 +24,11 @@ def package_scene(scene, config_keys, extra_files=None, overwrite=False,
         raise ValueError("Scene does not exist! {0}".format(scene))
 
     packager = get_scene_packager(scene, config_keys, extra_files)
-    return packager.run(overwrite=overwrite, dryrun=dryrun)
+    return packager.run(overwrite=overwrite, mode=mode)
 
 
 def package_scenes(scenes, config_keys, extra_files=None, overwrite=False,
-                   dryrun=False):
+                   mode=False):
     """
     Create packager and run for each scene
 
@@ -41,7 +41,7 @@ def package_scenes(scenes, config_keys, extra_files=None, overwrite=False,
         try:
             ids.append(
                 package_scene(scene, config_keys, extra_files,
-                              overwrite=overwrite, dryrun=dryrun)
+                              overwrite=overwrite, mode=mode)
             )
         except ValueError as e:
             tb_message = "".join(traceback.format_exception(type(e), e, None))
