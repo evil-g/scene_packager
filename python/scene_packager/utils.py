@@ -21,6 +21,7 @@ CONFIG = None
 
 # Frame regex
 FRAME_PAD_REGEX = r"(?<=[_\.])(?P<frame>#+|\d+|\%\d*d)$"
+FRAME_PAD_FMT_REGEX = r"(?<=[_\.])(?P<frame>#+|\%\d*d)$"
 # Log
 LOG = logging.getLogger("scene_packager.utils")
 
@@ -268,9 +269,11 @@ def basic_package_dst_path(src_path, dst_dir):
             os.path.join(dst_dir, src_path[match.start() + 1:]))
 
     # If no version dir, use subdir named after file
+    # Remove frame pad (#### or %04d style only)
     base = os.path.splitext(os.path.basename(src_path))[0]
+    subdir = re.sub(FRAME_PAD_FMT_REGEX, "", base)
     return clean_path(
-        os.path.join(dst_dir, base, os.path.basename(src_path)))
+        os.path.join(dst_dir, subdir, os.path.basename(src_path)))
 
 
 def get_renamed_dst_path(src_path, patterns):
