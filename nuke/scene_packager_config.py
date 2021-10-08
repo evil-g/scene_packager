@@ -225,6 +225,7 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     import nuke_packager_utils as utils
 
     log = scene_packager.utils.get_logger(__name__)
+    log.info("relative paths={}".format(relative_paths))
 
     # Load backup scene text
     with open(source_scene, "r") as handle:
@@ -269,7 +270,6 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
                                 flags=re.UNICODE)
 
     # Write
-    log.info("Writing packaged file: {}".format(dst_scene))
     scene_packager.utils.make_dirs(os.path.dirname(dst_scene))
     with open(dst_scene, "w") as handle:
         if isinstance(raw_scene_data, bytes):

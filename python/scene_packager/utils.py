@@ -455,33 +455,72 @@ def check_existing_package(package_root, metadata_file):
         if name in files:
             existing.append(os.path.join(root, name))
 
+    MANUAL_REQ = "Manually delete to use this dir as a package root"
     # No packages found in this dir
     if 0 == len(existing) and os.listdir(package_root):
         # No packages found, but there is something else in this dir.
         # Tool can't resolve this.
-        raise RuntimeError(
-            "No existing {0} found in parent dir.\nManually delete dir to use "
-            "it as a packager destination.\n{1}".format(
-                metadata_file, package_root))
+        msg = "No existing {0} found in package root dir.\nI can't tell " \
+            "if this is an old package or not.\n{1}: {2}".format(
+                metadata_file, MANUAL_REQ, package_root)
+        # Log
+        log.newline()
+        log.error("*" * 50)
+        log.error("Failed Package Overwrite")
+        log.newline()
+        for m in msg.split("\n"):
+            log.error(m)
+            log.newline()
+        log.error("*" * 50)
+        log.newline()
+
+        raise RuntimeError(msg)
     # More than 1 package found in this dir.
     # Tool can't resolve this. User should manually delete this dir or
     # packages inside it, or choose another package destination.
     elif len(existing) > 1:
+        msg = "Multiple {0} files found in package root dir.\n{1}: {2}".format(
+            metadata_file, MANUAL_REQ, package_root)
+        # Log
+        log.newline()
+        log.error("*" * 50)
+        log.error("Failed Package Overwrite")
+        log.newline()
+        for m in msg.split("\n"):
+            log.error(m)
+            log.newline()
+        log.error("Existing packages:")
         for e in existing:
-            log.warning(e)
-        raise RuntimeError(
-            "Multiple {0} found in parent dir.\nManually delete/resolve to "
-            "use this dir as a packager destination.\n{1}".format(
-                metadata_file, package_root))
+            log.error(e)
+        log.newline()
+        log.error("*" * 50)
+        log.newline()
+
+        raise RuntimeError(msg)
 
     # Only 1 package found
     # Check package root entry in metadata
     data = load_json(existing[0])
     if package_root != os.path.abspath(
             data.get("package_settings", {}).get("package_root")):
-        raise RuntimeError(
-            "{0} != {1}".format(package_root, os.path.abspath(
-                data.get("package_settings", {}).get("package_root"))))
+        msg = "Found a package, but its root is different than the current " \
+            "package root.\n{0}\nInput root: {1}\nFound root: {2}".format(
+                MANUAL_REQ, package_root, os.path.abspath(
+                    data.get("package_settings", {}).get("package_root")
+                )
+            )
+        # Log
+        log.newline()
+        log.error("*" * 50)
+        log.error("Failed Package Overwrite")
+        log.newline()
+        for m in msg.split("\n"):
+            log.error(m)
+            log.newline()
+        log.error("*" * 50)
+        log.newline()
+
+        raise RuntimeError(msg)
 
     return True
 
