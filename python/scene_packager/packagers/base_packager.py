@@ -83,7 +83,7 @@ class Packager(object):
                                                       self.package_root)
 
         self.settings["source_scene_backup"] = \
-            scene_packager_config.scene_backup_path(self.scene,
+            scene_packager_config.backup_scene_path(self.scene,
                                                     self.package_root)
 
         self.settings["metadata_path"] = scene_packager_config.metadata_path(

@@ -2,8 +2,9 @@
 """
 Scene package config, default implementation.
 
-To override, create your own config.py and
-set $SCENE_PACKAGER_CONFIG to its location.
+To override, create your own scene_packager_config.py and prepend
+it to $SCENE_PACKAGER_CONFIG_PATH.
+
 Any functions not overridden will use the default implementations below.
 """
 
@@ -23,9 +24,6 @@ def package_root(source_scene):
     """
     Get root directory of a new scene package
     """
-    # return "S:/ANIMA/projects/${project}/user/${user}/delivery/" \
-    #     "scene_packager/${application}/${date}/${shot}".format(kwargs)
-
     return os.path.join(
         os.path.expandvars("S:/ANIMA/projects/$LAUNCHAPP_PROJECT/user"),
         getpass.getuser(),
@@ -64,7 +62,7 @@ def packaged_scene_path(source_scene, package_root):
     )
 
 
-def scene_backup_path(source_scene, package_root):
+def backup_scene_path(source_scene, package_root):
     """
     Get path where packaged copy of source scene will be written to
 
