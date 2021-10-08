@@ -22,8 +22,9 @@ CONFIG = None
 # Frame regex
 FRAME_PAD_REGEX = r"(?<=[_\.])(?P<frame>#+|\d+|\%\d*d)$"
 FRAME_PAD_FMT_REGEX = r"(?<=[_\.])(?P<frame>#+|\%\d*d)$"
-# Log
-LOG = logging.getLogger("scene_packager.utils")
+
+# Default log level
+SCENE_PACKAGER_LOG_LEVEL = logging.WARNING
 
 
 def log_blank_line(self, count=1):
@@ -43,7 +44,7 @@ def log_blank_line(self, count=1):
     self.addHandler(self.output_handler)
 
 
-def get_logger(logger_name, level=logging.WARNING):
+def get_logger(logger_name, level=None):
     """
     Get logger
 
@@ -54,6 +55,9 @@ def get_logger(logger_name, level=logging.WARNING):
     Returns:
         Logger obj
     """
+    if level is None:
+        level = SCENE_PACKAGER_LOG_LEVEL
+
     log = logging.getLogger(logger_name)
     log.setLevel(level)
     log.propagate = False
@@ -147,6 +151,8 @@ def copy_file(src_file, dest_file, verbose=False, overwrite=False):
     Returns:
         Destination file str
     """
+    log = get_logger(__name__)
+
     src_file = clean_path(src_file)
     dest_file = clean_path(dest_file)
 
@@ -161,7 +167,7 @@ def copy_file(src_file, dest_file, verbose=False, overwrite=False):
     try:
         shutil.copyfile(src_file, dest_file)
         if verbose:
-            LOG.info("Copied '{0}' to {1}".format(src_file, dest_file))
+            log.info("Copied '{0}' to {1}".format(src_file, dest_file))
     except (IOError, OSError):
         raise
 
@@ -288,6 +294,8 @@ def get_renamed_dst_path(src_path, patterns):
     Returns:
         Subbed filepath str if there was a match
     """
+    log = get_logger(__name__)
+
     renamed = ""
     matched = []
     for data in patterns:
@@ -321,15 +329,15 @@ def get_renamed_dst_path(src_path, patterns):
 
     # Cannot resolve multiple pattern matches
     if matched and len(matched) > 1:
-        LOG.error("-" * 50)
+        log.error("-" * 50)
         msg = "Source path has multiple pattern matches: {0}".format(src_path)
-        LOG.error(msg)
-        LOG.error("-" * 50)
+        log.error(msg)
+        log.error("-" * 50)
         for m, d in matched:
-            LOG.error("Description: {0}".format(m.get("desc", "")))
-            LOG.error("Regex:       {0}".format(m.get("regex", "")))
-            LOG.error("Match dict:  {0}".format(d))
-            LOG.error("-" * 50)
+            log.error("Description: {0}".format(m.get("desc", "")))
+            log.error("Regex:       {0}".format(m.get("regex", "")))
+            log.error("Match dict:  {0}".format(d))
+            log.error("-" * 50)
         raise ValueError(msg)
 
     return renamed
@@ -392,19 +400,26 @@ def check_package_exists(packager):
 
 def check_available_dir(root):
     """
-    Returns True if dir DNE or exists but is empty
+    Return True if directory is available for use
+    (Either exists and is empty, or does not exist)
+
+    Args:
+        root (str): Dir to check
+
+    Returns:
+        bool
     """
     try:
         if os.listdir(root):
-            return True
+            return False
     except OSError as e:  # DNE
         if e.errno != errno.ENOENT:
             raise e
 
-    return False
+    return True
 
 
-def check_existing_package(package_root):
+def check_existing_package(package_root, metadata_file):
     """
     Check if this dir is a package root.
     Requirements: Must have 1 package_metadata.json file, in which
@@ -412,6 +427,7 @@ def check_existing_package(package_root):
 
     Args:
         package_root (str): Dir path to check
+        metadata_file (str): Metadata file basename
 
     Raises:
         RuntimeError
@@ -425,6 +441,7 @@ def check_existing_package(package_root):
         True if package metdata is found
         False if no package metadata is found or dir does not exist
     """
+    log = get_logger(__name__)
     package_root = os.path.abspath(package_root)
 
     # Doesn't exist yet
@@ -433,7 +450,7 @@ def check_existing_package(package_root):
 
     # Find existing package metadatas
     existing = []
-    name = PACKAGE_METADATA
+    name = metadata_file
     for root, dirs, files in os.walk(package_root):
         if name in files:
             existing.append(os.path.join(root, name))
@@ -445,17 +462,17 @@ def check_existing_package(package_root):
         raise RuntimeError(
             "No existing {0} found in parent dir.\nManually delete dir to use "
             "it as a packager destination.\n{1}".format(
-                PACKAGE_METADATA, package_root))
+                metadata_file, package_root))
     # More than 1 package found in this dir.
     # Tool can't resolve this. User should manually delete this dir or
     # packages inside it, or choose another package destination.
     elif len(existing) > 1:
         for e in existing:
-            print(e)
+            log.warning(e)
         raise RuntimeError(
             "Multiple {0} found in parent dir.\nManually delete/resolve to "
             "use this dir as a packager destination.\n{1}".format(
-                PACKAGE_METADATA, package_root))
+                metadata_file, package_root))
 
     # Only 1 package found
     # Check package root entry in metadata
@@ -469,13 +486,15 @@ def check_existing_package(package_root):
     return True
 
 
-def remove_existing_package(package_root, tmp_dir=None, subproc=False):
+def remove_existing_package(package_root, metadata_file, tmp_dir=None,
+                            subproc=False):
     """
     Delete existing package
     Find existing package metadata to confirm dir should be deleted
 
     Args:
         package_root (str): Root dir of package
+        metadata_file (str): Package metadata file name
         tmp_dir (str, optional): Temp dir.
                                  Package is moved here and then removed.
                                  Used if there specific project tmp area, etc.
@@ -486,19 +505,20 @@ def remove_existing_package(package_root, tmp_dir=None, subproc=False):
     Returns:
         None
     """
+    log = get_logger(__name__)
     # TODO - Temporary
     if "Windows" != platform.system():
         raise NotImplementedError(
-            "{0} platform scene package removal not supported".format(
+            "{} platform scene package removal not supported".format(
                 platform.system()))
 
     package_root = clean_path(package_root)
     # Doesn't exist yet
     if not os.path.exists(package_root):
-        raise OSError("Package root does not exist: {0}".format(package_root))
+        raise OSError("Package root does not exist: {}".format(package_root))
 
     # Check root is a scene package
-    check_existing_package(package_root)
+    check_existing_package(package_root, metadata_file)
 
     # Rename existing package to tmp location and delete it
     # Get tmp dir
@@ -517,19 +537,19 @@ def remove_existing_package(package_root, tmp_dir=None, subproc=False):
     tmp_package_root = clean_path(tmp_package_root)
 
     if os.path.exists(tmp_package_root):
-        raise OSError("Cannot rename existing package dir. Destination "
+        raise OSError("Cannot rename existing package dir. Destination tmp "
                       "dir already exists: {0}".format(tmp_package_root))
 
     # Rename to tmp
-    print("Renaming package root: {0} --> {1}".format(package_root,
-                                                      tmp_package_root))
+    log.newline()
+    log.info("Renaming package root: {0} --> {1}".format(package_root,
+                                                         tmp_package_root))
     make_dirs(os.path.dirname(tmp_package_root))
     os.rename(package_root, tmp_package_root)
 
     # Remove tmp
-    print("Removing package at: {0}".format(tmp_package_root))
+    log.info("Removing package at: {0}".format(tmp_package_root))
     if subproc:
-        print("Using subprocess")
         spawn_remove_subprocess(tmp_package_root)
     else:
         shutil.rmtree(tmp_package_root)
@@ -542,6 +562,8 @@ def spawn_remove_subprocess(remove_dir):
     Args:
         remove_dir (str): Dir to remove
     """
+    log = get_logger(__name__)
+
     if "Windows" == platform.system():
         kwargs = {
             "creationflags": subprocess.CREATE_NEW_PROCESS_GROUP
@@ -557,7 +579,8 @@ def spawn_remove_subprocess(remove_dir):
         os.getenv("SCENE_PACKAGER_ROOT"), "bin", "remove_scene_package.py"))
     args = ["python", exe, remove_dir]
 
-    print("SUBPROC:", args)
+    log.info("SUBPROC: {}".format(args))
+    log.newline()
 
     # Run
     try:
@@ -569,5 +592,5 @@ def spawn_remove_subprocess(remove_dir):
                 **kwargs
             )
     except Exception:
-        print("Failed to start subprocess: {0}".format(" ".join(args)))
+        log.error("Failed to start subprocess: {0}".format(" ".join(args)))
         raise

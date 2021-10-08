@@ -179,10 +179,13 @@ class Packager(object):
         """
         if 0 == verbose:
             self.log.setLevel(logging.WARNING)
+            utils.SCENE_PACKAGER_LOG_LEVEL = logging.WARNING
         elif 1 == verbose:
             self.log.setLevel(logging.INFO)
+            utils.SCENE_PACKAGER_LOG_LEVEL = logging.INFO
         elif 2 <= verbose:
             self.log.setLevel(logging.DEBUG)
+            utils.SCENE_PACKAGER_LOG_LEVEL = logging.DEBUG
 
     @property
     def package_root(self):
@@ -527,20 +530,24 @@ class Packager(object):
         self.set_mode(mode)
 
         # Check for existing package
-        exists = utils.check_available_dir(self.package_root)
+        avail = utils.check_available_dir(self.package_root)
         # Already exists
-        if exists and not overwrite:
+        if not avail and not overwrite:
             raise RuntimeError(
-                "Package already exists at: {0}".format(self.package_root)
+                "Package already exists at: {0}\nUse --overwrite flag to "
+                "force overwrite.".format(self.package_root)
             )
         # Remove existing (skip on dryrun/mode 2)
-        elif exists and overwrite and self.mode < 2:
+        elif (not avail) and overwrite and self.mode < 2:
             self.log.info(
                 "Removing existing package... overwrite={0}".format(overwrite)
             )
             packager_tmp = scene_packager_config.package_tmp_dir(self.scene)
             utils.remove_existing_package(
-                self.package_root, tmp_dir=packager_tmp, subproc=True
+                self.package_root,
+                os.path.basename(self.package_metadata_path),
+                tmp_dir=packager_tmp,
+                subproc=True
             )
 
         # Load scene data
