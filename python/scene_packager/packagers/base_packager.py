@@ -74,9 +74,9 @@ class Packager(object):
         self.settings = {}
 
         # Defaults
-        self.settings["package_root"] = scene_packager_config.package_root(
-            self.scene
-        )
+        # Override of root (since it's used by others below)
+        self.settings["package_root"] = settings.get("package_root") or \
+            scene_packager_config.package_root(self.scene)
 
         self.settings["packaged_scene"] = \
             scene_packager_config.packaged_scene_path(self.scene,
@@ -112,6 +112,9 @@ class Packager(object):
         # Overrides
         for key, val in settings.items():
             if val is not None:
+                self.log.debug(
+                    "Input setting: {}={}".format(key, val)
+                )
                 self.settings[key] = val
 
         return self.settings
@@ -527,6 +530,9 @@ class Packager(object):
             mode (bool): If True, do not submit copy job,
                         only write packaged scene and metadata.
         """
+        self.log.info(
+            "Running scene packager [overwrite={0}]".format(overwrite)
+        )
         self.set_mode(mode)
 
         # Check for existing package
@@ -539,15 +545,11 @@ class Packager(object):
             )
         # Remove existing (skip on dryrun/mode 2)
         elif (not avail) and overwrite and self.mode < 2:
-            self.log.info(
-                "Removing existing package... overwrite={0}".format(overwrite)
-            )
             packager_tmp = scene_packager_config.package_tmp_dir(self.scene)
             utils.remove_existing_package(
                 self.package_root,
                 os.path.basename(self.package_metadata_path),
-                tmp_dir=packager_tmp,
-                subproc=True
+                tmp_dir=packager_tmp
             )
 
         # Load scene data
