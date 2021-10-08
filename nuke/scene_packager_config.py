@@ -28,15 +28,69 @@ def get_scene_frange(scene):
     Returns:
         (start (int), end (int)) tuple
     """
+    import scene_packager
     import nuke_packager_utils as utils
 
-    for node in utils.parse_nodes(scene):
-        if "Root" == node.Class():
-            start = int(node.knob_value("first_frame"))
-            end = int(node.knob_value("last_frame"))
+    log = scene_packager.utils.get_logger(__name__)
+
+    start = None
+    end = None
+
+    # Check root nodes
+    nodes = utils.parse_nodes(scene)
+    roots = [n for n in nodes if "Root" == n.Class()]
+    # (There shouldn't really be more than 1 Root...)
+    if len(roots) > 1:
+        log.warning(
+            "Multiple Roots. Using first available frange settings."
+        )
+    # Get start/end from first available root
+    for root in roots:
+        try:
+            start = int(root.knob_value("first_frame"))
+            end = int(root.knob_value("last_frame"))
+        except KeyError:
+            log.debug(
+                "Failed to get Root first_frame/last_frame", exc_info=True
+            )
+            log.debug(root.data)
+        else:
+            log.info("Using Root first_frame/last_frame")
             return start, end
 
-    raise RuntimeError("Could not find Root node in ")
+    log.warning(
+        "Failed to get Root first_frame/last_frame. "
+        "Checking node frame ranges..."
+    )
+
+    # No root start/end. Let's try to figure it out from the node settings.
+    # Use lowest start frame and highest end frame overall.
+    for node in [n for n in nodes if n not in roots]:
+        # Start
+        try:
+            node_start = int(node.knob_value("first"))
+        except Exception:
+            log.debug("No {}.first".format(node.knob_value("name")))
+        else:
+            if start is None or node_start < start:
+                start = node_start
+
+        # End
+        try:
+            node_end = int(node.knob_value("last"))
+        except Exception:
+            log.debug("No {}.last".format(node.knob_value("name")))
+        else:
+            if end is None or node_end > end:
+                end = node_end
+
+    # Found start/end
+    if start is not None and end is not None:
+        log.info("Start: {} | End: {}".format(start, end))
+        return start, end
+
+    raise RuntimeError("Could not figure out scene start/end. [Check whether "
+                       "Root node has first_frame/last_frame set]")
 
 
 def load_scene_data(packaged_scene, package_root, source_scene):
@@ -55,7 +109,7 @@ def load_scene_data(packaged_scene, package_root, source_scene):
     import scene_packager
     import nuke_packager_utils as utils
 
-    LOG = scene_packager.utils.get_logger(__name__)
+    log = scene_packager.utils.get_logger(__name__)
 
     dep_data = {}
     root = None
@@ -84,14 +138,14 @@ def load_scene_data(packaged_scene, package_root, source_scene):
                             packaged_scene, dst, package_root
                         )
                     except AssertionError:
-                        LOG.error(
+                        log.error(
                             "Error getting relative path: {}".format(
                                 node.knob_value("name")
                             )
                         )
-                        LOG.error("packaged root: {}".format(package_root))
-                        LOG.error("packaged scene: {}".format(packaged_scene))
-                        LOG.error("dependency: {}".format(dst))
+                        log.error("packaged root: {}".format(package_root))
+                        log.error("packaged scene: {}".format(packaged_scene))
+                        log.error("dependency: {}".format(dst))
                         raise
 
                 # Node already logged
@@ -99,12 +153,12 @@ def load_scene_data(packaged_scene, package_root, source_scene):
                 curr_end = None
                 if file in dep_data:
                     # # Check
-                    # LOG.info("packaged_path: {}".format(dst))
+                    # log.info("packaged_path: {}".format(dst))
                     # print("packaged_path: {}".format(dst))
                     # print("dep_data path: {}".format(dep_data[file]["packaged_path"]))
                     # assert(dep_data[file]["packaged_path"] == dst)
                     # if rel:
-                    #     LOG.info("relative_path: {}".format(rel))
+                    #     log.info("relative_path: {}".format(rel))
                     #     print("relative_path: {}".format(rel))
                     #     print("dep_data path: {}".format(dep_data[file]["packaged_path"]))
                     #     assert(dep_data[file]["relative_path"] == rel)
@@ -170,7 +224,7 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     import scene_packager
     import nuke_packager_utils as utils
 
-    LOG = scene_packager.utils.get_logger(__name__)
+    log = scene_packager.utils.get_logger(__name__)
 
     # Load backup scene text
     with open(source_scene, "r") as handle:
@@ -194,7 +248,7 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
         )
 
     if "project_directory" not in raw_scene_data:
-        LOG.error("project_directory not found in output scene data.")
+        log.error("project_directory not found in output scene data.")
 
     # Sub new files
     for file, data in dep_data.items():
@@ -208,14 +262,14 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
         else:
             dst_file = data["packaged_path"]
 
-        LOG.debug("Replacing: {} {}".format(file, dst_file))
+        log.debug("Replacing: {} {}".format(file, dst_file))
         raw_scene_data = re.sub(file,
                                 dst_file,
                                 raw_scene_data,
                                 flags=re.UNICODE)
 
     # Write
-    LOG.info("Writing packaged file: {}".format(dst_scene))
+    log.info("Writing packaged file: {}".format(dst_scene))
     scene_packager.utils.make_dirs(os.path.dirname(dst_scene))
     with open(dst_scene, "w") as handle:
         if isinstance(raw_scene_data, bytes):
