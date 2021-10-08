@@ -155,8 +155,8 @@ def get_packaged_path(filepath, parent_dir):
 
 
 # -------------------------------------------------------
-# Must be implemented per-DCC
-# Nuke implementation: scene_packager/nuke/scene_packager_config.py
+# *** Must be implemented per-DCC ***
+# *** Nuke implementation: scene_packager/nuke/scene_packager_config.py ***
 # -------------------------------------------------------
 def project_directory(packaged_scene, package_root, source_scene):
     """
@@ -192,6 +192,7 @@ def load_scene_data(packaged_scene, package_root, source_scene):
         source_scene (str): Source scene path
 
     Returns:
+        root_data (str), dep_data (dict), start (int), end (int)
     """
     raise NotImplementedError()
 

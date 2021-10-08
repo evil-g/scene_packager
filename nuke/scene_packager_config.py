@@ -47,6 +47,9 @@ def load_scene_data(packaged_scene, package_root, source_scene):
         packaged_scene (str): Packaged scene path
         package_root (str): Package root path
         source_scene (str): Source scene path
+
+    Returns:
+        root_data (str), dep_data (dict), start (int), end (int)
     """
     import os
     import scene_packager
