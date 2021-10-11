@@ -366,9 +366,25 @@ class Packager(object):
         Returns:
             Dict
         """
-        return scene_packager_config.package_metadata(
+        metadata = scene_packager_config.package_metadata(
             self.scene, self.settings
         )
+
+        # Required keys (used by inspect mode)
+        required = ["date",
+                    "SCENE_PACKAGER_CONFIG_PATH",
+                    "source_scene",
+                    "package_settings",
+                    "user"]
+        missing = [k for k in required if k not in metadata]
+        if missing:
+            msg = "Missing required metadata keys: {}\nDouble check that " \
+                "scene_packager_config.package_metadata is returning the " \
+                "correct keys.".format(", ".join(missing))
+            self.log.error(msg)
+            raise ValueError(msg)
+
+        return metadata
 
     def load_scene_data(self):
         """

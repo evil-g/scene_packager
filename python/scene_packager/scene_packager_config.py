@@ -112,9 +112,15 @@ def package_metadata(scene, settings):
     metadata = {
         "date": datetime.now().strftime("%Y-%m-%d_%H%M%S"),
         "package_settings": settings,
-        "source_file": scene,
+        "source_scene": scene,
         "user": getpass.getuser(),
     }
+    # Add search path for config files
+    try:
+        metadata["SCENE_PACKAGER_CONFIG_PATH"] = \
+            os.environ["SCENE_PACKAGER_CONFIG_PATH"]
+    except KeyError:
+        raise RuntimeError("$SCENE_PACKAGER_CONFIG_PATH is not set.")
 
     return metadata
 
