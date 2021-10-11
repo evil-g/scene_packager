@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # Standard
-import collections
 from datetime import datetime
 import errno
 from glob import glob
@@ -197,7 +196,7 @@ def save_json(path, data, overwrite=False):
 
 def load_json(path, **kwargs):
     """
-    Load json file. Defaults to using OrderedDict
+    Load json file
 
     Args:
         path (str): Filepath to load
@@ -205,9 +204,6 @@ def load_json(path, **kwargs):
     Returns:
         Data dict
     """
-    if "object_pairs_hook" not in kwargs:
-        kwargs["object_pairs_hook"] = collections.OrderedDict
-
     with open(path, mode="rb") as handle:
         return json.load(handle, **kwargs)
 
@@ -419,6 +415,31 @@ def check_available_dir(root):
     return True
 
 
+def find_existing_packages(root_dir, metadata_file):
+    """
+    Find existing package metadata under directory root
+
+    Args:
+        package_root (str): Root dir
+        metadata_file (str): Metadata file basename
+
+    Returns:
+        List of package metadata paths
+    """
+    # Doesn't exist yet
+    if not os.path.exists(root_dir):
+        raise OSError("{} does not exist".format(root_dir))
+
+    # Find existing package metadatas
+    existing = []
+    name = metadata_file
+    for root, dirs, files in os.walk(root_dir):
+        if name in files:
+            existing.append(os.path.join(root, name))
+
+    return existing
+
+
 def check_existing_package(package_root, metadata_file):
     """
     Check if this dir is a package root.
@@ -444,16 +465,11 @@ def check_existing_package(package_root, metadata_file):
     log = get_logger(__name__)
     package_root = os.path.abspath(package_root)
 
-    # Doesn't exist yet
-    if not os.path.exists(package_root):
+    # Get existing package metadata files
+    try:
+        existing = find_existing_packages(package_root, metadata_file)
+    except OSError:
         return False
-
-    # Find existing package metadatas
-    existing = []
-    name = metadata_file
-    for root, dirs, files in os.walk(package_root):
-        if name in files:
-            existing.append(os.path.join(root, name))
 
     MANUAL_REQ = "Manually delete to use this dir as a package root"
     # No packages found in this dir

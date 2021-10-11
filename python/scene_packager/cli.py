@@ -181,13 +181,38 @@ def main():
         help=("Search this directory for existing scene packages")
     )
 
+    parser_inspect.add_argument(
+        "-r", "--open-root-dir", dest="open_root_dir", action="store_true",
+        help=("Open root directory of each found package.")
+    )
+
+    parser_inspect.add_argument(
+        "-s", "--open-scene-dir", dest="open_scene_dir", action="store_true",
+        help=("Open parent directory of each packaged scene.")
+    )
+
+    parser_inspect.add_argument(
+        "-v", "--verbose", dest="verbose", action="count", default=0,
+        help=("Print info about found packages.\n"
+              "Use -v to print scene/user/date, "
+              "-vv to print all package metadata.")
+    )
+
     # --------------------------------------------------------------------
 
     opts = parser.parse_args()
 
     # --- Inspect mode ---
-    if "inpsect" == opts.subparser_command:
+    if "inspect" == opts.subparser_command:
+        # Cannot use open root and open scene dir at the same time
+        if opts.open_root_dir and opts.open_scene_dir:
+            raise RuntimeError(
+                "Argument conflict. Cannot use --open-root-dir and "
+                "--open-scene-dir at the same time."
+            )
 
+        api.inspect(opts.inspect_dir, open_root_dir=opts.open_root_dir,
+                    open_scene_dir=opts.open_scene_dir, verbose=opts.verbose)
         return
 
     # --- Run mode --
