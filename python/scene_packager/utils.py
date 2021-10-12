@@ -61,7 +61,10 @@ def get_logger(logger_name, level=None):
     log.setLevel(level)
     log.propagate = False
 
-    if not log.handlers:
+    if log.handlers:
+        for handler in log.handlers:
+            handler.setLevel(level)
+    else:
         # Add output handler
         handler = logging.StreamHandler()
         handler.setLevel(level)
@@ -76,15 +79,15 @@ def get_logger(logger_name, level=None):
         handler.setFormatter(formatter)
         log.addHandler(handler)
 
-        # Add blank line handler
-        blank_handler = logging.StreamHandler()
-        blank_handler.setLevel(level)
-        blank_handler.setFormatter(logging.Formatter(fmt=""))
+    # Add blank line handler
+    blank_handler = logging.StreamHandler()
+    blank_handler.setLevel(level)
+    blank_handler.setFormatter(logging.Formatter(fmt=""))
 
-        # Add log.newline() method
-        log.output_handler = handler
-        log.blank_handler = blank_handler
-        log.newline = types.MethodType(log_blank_line, log)
+    # Add log.newline() method
+    log.output_handler = handler
+    log.blank_handler = blank_handler
+    log.newline = types.MethodType(log_blank_line, log)
 
     return log
 
@@ -471,13 +474,13 @@ def check_existing_package(package_root, metadata_file):
     except OSError:
         return False
 
-    MANUAL_REQ = "Manually delete to use this dir as a package root"
+    MANUAL_REQ = "Manually delete this dir to use it as a package root."
     # No packages found in this dir
     if 0 == len(existing) and os.listdir(package_root):
         # No packages found, but there is something else in this dir.
         # Tool can't resolve this.
         msg = "No existing {0} found in package root dir.\nI can't tell " \
-            "if this is an old package or not.\n{1}: {2}".format(
+            "if this is an old package or not.\n{1}\n{2}".format(
                 metadata_file, MANUAL_REQ, package_root)
         # Log
         log.newline()
@@ -495,7 +498,7 @@ def check_existing_package(package_root, metadata_file):
     # Tool can't resolve this. User should manually delete this dir or
     # packages inside it, or choose another package destination.
     elif len(existing) > 1:
-        msg = "Multiple {0} files found in package root dir.\n{1}: {2}".format(
+        msg = "Multiple {0} files found in package root dir.\n{1}\n{2}".format(
             metadata_file, MANUAL_REQ, package_root)
         # Log
         log.newline()

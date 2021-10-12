@@ -215,8 +215,9 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
 
 
 # -------------------------------------------------------
-# Pre/post hooks
+# Optional ops
 # -------------------------------------------------------
+# Pre/post hooks
 def pre_package(scene, mode=0):
     """
     Run before packaging
@@ -229,5 +230,12 @@ def post_package(scene, mode=0):
     """
     Run after packaging
     Implementation optional
+    """
+    pass
+
+
+def open_packaged_scene(scene):
+    """
+    Hook to open the final scene after packaging operations are complete
     """
     pass

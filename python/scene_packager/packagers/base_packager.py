@@ -586,3 +586,6 @@ class Packager(object):
         self.log.info("Package complete!")
         self.log.info("Completed package root: {}".format(self.package_root))
         self.log.info("*" * 50)
+
+        # Open scene
+        scene_packager_config.open_packaged_scene(self.packaged_scene)

@@ -8,74 +8,11 @@ import os
 import logging
 
 # Scene packager
-from . import api, scene_packager_config
+from . import api
 
 
 # Log
 LOG = logging.getLogger("scene_packager.cli")
-SP_CONFIG_NAME = "scene_packager_config.py"
-
-
-def _load_config_override(path=None):
-    """
-    """
-    path = path or os.getenv(
-        "SCENE_PACKAGER_CONFIG_FILE",
-        os.path.expanduser("~/{}".format(SP_CONFIG_NAME))
-    )
-
-    # Load all scene_packager_config.py files in search path
-    paths = []
-    search_path = os.getenv("SCENE_PACKAGER_CONFIG_PATH")
-    if search_path:
-        for search_dir in search_path.split(";"):
-            target = os.path.join(search_dir, SP_CONFIG_NAME)
-            if os.path.isfile(target):
-                paths.append(target)
-    else:
-        paths = [path]
-
-    # Override general config
-    for each in paths:
-
-        mod = {
-            "__file__": each,
-        }
-
-        try:
-            with open(each) as f:
-                exec(compile(f.read(), f.name, "exec"), mod)
-        except IOError:
-            raise
-        except Exception:
-            raise ("Invalid override config: {}".format(each))
-
-        for key in dir(scene_packager_config):
-            if key.startswith("__"):
-                continue
-
-            try:
-                value = mod[key]
-            except KeyError:
-                continue
-
-            setattr(scene_packager_config, key, value)
-
-    return each
-
-
-def _init_backup_config():
-    """
-    Make backup copies of originals, with `_` prefix
-    Useful for augmenting an existing value with your own config
-    """
-
-    for member in dir(scene_packager_config):
-        if member.startswith("__"):
-            continue
-
-        setattr(scene_packager_config, "_%s" % member,
-                getattr(scene_packager_config, member))
 
 
 def main():
@@ -117,13 +54,14 @@ def main():
     )
 
     # Packager overrides
-    parser_run.add_argument("--config", dest="config", type=str, help=(
-        "Path to a config .py file. Overrides $SCENE_PACKAGER_CONFIG_FILE"
-    ))
+    parser_run.add_argument(
+        "--search-path", dest="search_path", type=str, help=(
+            "Overrides env search path ($SCENE_PACKAGER_CONFIG_PATH)")
+    )
     parser_run.add_argument(
         "-r", "--package-root", dest="package_root", type=str,
-        help=("Target root directory for this package. "
-              "Overrides config.package_root() function.")
+        help=("Target root directory for this package. Overrides any "
+              "implementation in scene_packager_config.package_root()")
     )
 
     # Extra files
@@ -177,13 +115,23 @@ def main():
     parser_inspect = subparsers.add_parser("inspect", help="inspect --help")
 
     parser_inspect.add_argument(
-        "--dir", dest="inspect_dir", type=str, required=True,
-        help=("Search this directory for existing scene packages")
+        "--config", dest="config", action="store_true",
+        help=("Print info about config overrides.")
+    )
+
+    parser_inspect.add_argument(
+        "--search-path", dest="search_path", type=str, help=(
+            "Overrides env search path ($SCENE_PACKAGER_CONFIG_PATH)")
+    )
+
+    parser_inspect.add_argument(
+        "--dir", dest="inspect_dir", type=str,
+        help=("Search this directory for existing scene packages.")
     )
 
     parser_inspect.add_argument(
         "-r", "--open-root-dir", dest="open_root_dir", action="store_true",
-        help=("Open root directory of each found package.")
+        help=("Open root directory of each package.")
     )
 
     parser_inspect.add_argument(
@@ -210,9 +158,21 @@ def main():
                 "Argument conflict. Cannot use --open-root-dir and "
                 "--open-scene-dir at the same time."
             )
+        if opts.search_path and not opts.config:
+            raise RuntimeError(
+                "--search-path override must be used with --config"
+            )
 
-        api.inspect(opts.inspect_dir, open_root_dir=opts.open_root_dir,
-                    open_scene_dir=opts.open_scene_dir, verbose=opts.verbose)
+        # Config inspection
+        if opts.config:
+            api.inspect_config(opts.search_path)
+
+        # Dir inspection
+        if opts.inspect_dir:
+            api.inspect(
+                opts.inspect_dir, open_root_dir=opts.open_root_dir,
+                open_scene_dir=opts.open_scene_dir, verbose=opts.verbose
+            )
         return
 
     # --- Run mode --
@@ -254,8 +214,8 @@ def main():
     # ----------------------------------
     # Initialize config
     # ----------------------------------
-    _init_backup_config()
-    _load_config_override(path=opts.config)
+    api._init_backup_config()
+    api._load_config_overrides(search_path=opts.search_path)
 
     # Dryrun level
     if opts.dryrun:
