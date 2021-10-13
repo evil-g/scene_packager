@@ -167,14 +167,28 @@ class Packager(object):
                 type(mode))
             )
 
-        if 0 == mode:
-            self.log.debug("Package mode==0 (normal mode)")
-        elif 1 == mode:
-            self.log.debug("Package mode==1 (nocopy mode)")
-        elif 2 <= mode:
-            self.log.debug("Package mode<=2 (debug mode)")
-
         self.mode = mode
+
+        if 0 == self.mode:
+            self.log.debug("Package mode==0 ({} mode)".format(self.mode_str))
+        elif 1 == self.mode:
+            self.log.debug("Package mode==1 ({} mode)".format(self.mode_str))
+        elif 2 <= self.mode:
+            self.log.debug("Package mode<=2 ({} mode)".format(self.mode_str))
+
+    @property
+    def mode_str(self):
+        """
+        Get description str of packager mode
+        """
+        if 0 == self.mode:
+            return "normal"
+        elif 1 == self.mode:
+            return "nocopy"
+        elif 2 <= self.mode:
+            return "debug"
+        else:
+            raise ValueError("Invalid mode: {}".format(self.mode))
 
     def set_verbosity(self, verbose=0):
         """
@@ -313,10 +327,12 @@ class Packager(object):
 
             # Glob style source/dst for each node
             src_glob = utils.get_frame_glob_path(src_path)
-            self.log.debug("Source frame sequence: {}".format(src_glob))
+            self.log.debug("{:24}: {}".format("Source frame sequence",
+                                              src_glob))
 
             dst_glob = utils.get_frame_glob_path(data["packaged_path"])
-            self.log.debug("Packaged frame sequence: {}".format(dst_glob))
+            self.log.debug("{:24}: {}".format("Packaged frame sequence",
+                                              dst_glob))
 
             # Specific frames
             frames = []
@@ -428,9 +444,12 @@ class Packager(object):
                                           self.package_filecopy_metadata_path)
         # Dryrun mode
         else:
+            self.log.info("Filecopy metadata path:")
+            self.log.info(self.package_filecopy_metadata_path)
             filecopy_data = self.get_filecopy_metadata()
-            self.log.debug("File copy metadata:")
-            self.log.debug(pprint.pformat(filecopy_data, indent=4))
+            self.log.debug(
+                "Filecopy metadata:\n" + pprint.pformat(filecopy_data)
+            )
 
     def write_package_metadata(self):
         """
@@ -447,9 +466,10 @@ class Packager(object):
             )
         # Dryrun mode
         else:
-            self.log.debug("Package metadata:")
+            self.log.info("Package metadata path:")
+            self.log.info(self.package_metadata_path)
             self.log.debug(
-                pprint.pformat(self.package_metadata(), indent=4)
+                "Package metadata:\n" + pprint.pformat(self.package_metadata())
             )
 
     def write_packaged_scene(self):
@@ -478,17 +498,22 @@ class Packager(object):
         2. Export package metadata
         3. Export file copy metadata
         """
-        self.log.debug("Start pre_package")
-        self.log.info("Original scene:")
-        self.log.info(self.scene)
         self.log.newline()
-        self.log.info("Backup scene:")
+        self.log.debug("Start pre_package")
+        self.log.info("Input scene:")
+        self.log.info(self.scene)
+
+        self.log.newline()
+        self.log.info("Source scene copy:")
         self.log.info(self.source_scene_backup)
 
         # Copy original scene to package backup dir
-        utils.copy_file(self.scene, self.source_scene_backup)
+        # Not in dryrun mode
+        if self.mode < 2:
+            utils.copy_file(self.scene, self.source_scene_backup)
 
         # Write packager metadata
+        # (They should take care of dryrun on their own)
         self.write_package_metadata()
         self.write_filecopy_metadata()
 
@@ -517,7 +542,8 @@ class Packager(object):
         else:
             self.log.newline()
             self.log.info(
-                "Skipping file copy for packager mode [{}]".format(self.mode)
+                "Skipping file copy for packager mode {} ({} mode)".format(
+                    self.mode, self.mode_str)
             )
 
         self.log.debug("End packaging")
@@ -581,11 +607,15 @@ class Packager(object):
         self.post_package()
 
         # Finished!
+        # Print confirmation for normal, nocopy modes
         self.log.newline()
         self.log.info("*" * 50)
-        self.log.info("Package complete!")
-        self.log.info("Completed package root: {}".format(self.package_root))
+        if self.mode < 2:
+            self.log.info("Package complete!")
+            self.log.info("Completed package root: {}".format(
+                self.package_root))
+            # Open scene
+            scene_packager_config.open_packaged_scene(self.packaged_scene)
+        else:
+            self.log.info("Dryrun finished!")
         self.log.info("*" * 50)
-
-        # Open scene
-        scene_packager_config.open_packaged_scene(self.packaged_scene)
