@@ -38,7 +38,7 @@ def main():
     parser_run = subparsers.add_parser("run", help="run --help")
 
     parser_run.add_argument(
-        "-s", "--scene", dest="input_scene", type=str,   # required=True,
+        "-s", "--scene", dest="input_scene", type=str, required=True,
         help=(
             "Either 1. Filepath of scene to package, or 2. Directory to search "
             "for scenes to package. If a directory is provided, finds and "

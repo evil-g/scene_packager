@@ -250,3 +250,111 @@ def inspect_config(search_path=None):
     Load config and print debug info about overrides
     """
     _load_config_overrides(search_path=search_path, print_info=True)
+
+
+def create_run_command(**kwargs):
+    """
+    Create commandline str for 'run' mode
+
+    Args:
+        dryrun (bool): If True, dryrun mode
+        extra_files (dict): Extra files to copy to packager
+        nocopy (bool): If True, nocopy mode
+        overwrite (bool): If True, overwrite
+        package_root (str): Package root dir
+        search_path (str): Search path for packager configs
+        ui (bool): If True, launches basic UI
+        verbose (int): Verbosity count flag
+                       0=off, 1='-v', 2='-vv', etc
+
+    Returns:
+        cmd str
+    """
+    if "scene" not in kwargs:
+        raise KeyError("Argument 'scene' is required.")
+
+    if kwargs.get("nocopy", False) and kwargs.get("dryrun", False):
+        raise ValueError("nocopy and dryrun modes cannot be used together")
+
+    # Assemble command
+    cmd = "scene-packager run"
+
+    # Input args
+    if "search_path" in kwargs:
+        cmd += " --search-path {}".format(kwargs["search_path"])
+
+    if "package_root" in kwargs:
+        cmd += " --package-root {}".format(kwargs["package_root"])
+
+    if "extra_files" in kwargs:
+        cmd += " --extra-files {}".format(kwargs["extra_files"])
+
+    # Boolean flags
+    if kwargs.get("overwrite", False):
+        cmd += " --overwrite"
+
+    if kwargs.get("nocopy", False):
+        cmd += " --nocopy"
+
+    if kwargs.get("dryrun", False):
+        cmd += " --dryrun"
+
+    if kwargs.get("ui", False):
+        cmd += " --ui"
+
+    verbose_arg = ""
+    for v in range(kwargs.get("verbose", 0)):
+        verbose_arg += "v"
+
+    if verbose_arg:
+        cmd += " -{}".format(verbose_arg)
+
+    LOG.info("Created command: {}".format(cmd))
+    return cmd
+
+
+def create_inspect_command(**kwargs):
+    """
+    Create commandline str for 'inspect' mode
+
+    Args:
+        config (bool): If True, prints config override info
+        dir (str): Dir to inspect
+        open_root_dir (bool): If True, open package root dirs
+        open_scene_dir (bool): If True, open package scene dirs
+        search_path (str): Search path for packager configs
+        verbose (int): Verbosity count flag
+                       0=off, 1='-v', 2='-vv', etc
+
+    Returns:
+        cmd str
+    """
+    cmd = "scene-packager inspect"
+
+    # Input args
+    if "search_path" in kwargs:
+        cmd += " --search-path {}".format(kwargs["search_path"])
+
+    # Input args
+    if "dir" in kwargs:
+        cmd += " --dir {}".format(kwargs["dir"])
+
+    # Boolean args
+    if kwargs.get("config", False):
+        cmd += " --config"
+
+    if kwargs.get("open_root_dir", False):
+        cmd += " --open-root-dir"
+
+    if kwargs.get("open_scene_dir", False):
+        cmd += " --open-scene-dir"
+
+    verbose_arg = ""
+    for v in range(kwargs.get("verbose", 0)):
+        verbose_arg += "v"
+
+    if verbose_arg:
+        cmd += " -{}".format(verbose_arg)
+
+    LOG.info("Created command: {}".format(cmd))
+    return cmd

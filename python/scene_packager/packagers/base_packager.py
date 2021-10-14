@@ -83,7 +83,7 @@ class Packager(object):
             scene_packager_config.packaged_scene_path(self.scene,
                                                       self.package_root)
 
-        self.settings["source_scene_backup"] = \
+        self.settings["source_scene_copy"] = \
             scene_packager_config.backup_scene_path(self.scene,
                                                     self.package_root)
 
@@ -224,11 +224,11 @@ class Packager(object):
         return self.settings["packaged_scene"]
 
     @property
-    def source_scene_backup(self):
+    def source_scene_copy(self):
         """
         Path of packaged scene
         """
-        return self.settings["source_scene_backup"]
+        return self.settings["source_scene_copy"]
 
     @property
     def package_metadata_path(self):
@@ -452,7 +452,7 @@ class Packager(object):
         self.log.info(self.packaged_scene)
 
         return scene_packager_config.write_packaged_scene(
-            self.source_scene_backup,
+            self.source_scene_copy,
             self.packaged_scene,
             self.dep_data,
             self.root,
@@ -476,12 +476,12 @@ class Packager(object):
 
         self.log.newline()
         self.log.info("Source scene copy:")
-        self.log.info(self.source_scene_backup)
+        self.log.info(self.source_scene_copy)
 
         # Copy original scene to package backup dir
         # Not in dryrun mode
         if self.mode < 2:
-            utils.copy_file(self.scene, self.source_scene_backup)
+            utils.copy_file(self.scene, self.source_scene_copy)
 
         # Write packager metadata
         # (They should take care of dryrun on their own)
