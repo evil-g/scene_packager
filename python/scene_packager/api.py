@@ -125,17 +125,17 @@ def _init_backup_config():
                 getattr(scene_packager_config, member))
 
 
-def get_scene_packager(scene, config_keys, extra_files=None):
+def get_scene_packager(scene, settings, extra_files=None):
     """
     Get scene packager for a scene
     """
     packager = packagers.base_packager.Packager(scene,
-                                                config_keys,
+                                                settings,
                                                 extra_files)
     return packager
 
 
-def package_scene(scene, config_keys, extra_files=None, overwrite=False,
+def package_scene(scene, settings, extra_files=None, overwrite=False,
                   mode=False):
     """
     Package the given scene path
@@ -143,11 +143,11 @@ def package_scene(scene, config_keys, extra_files=None, overwrite=False,
     if not os.path.isfile(scene):
         raise ValueError("Scene does not exist! {0}".format(scene))
 
-    packager = get_scene_packager(scene, config_keys, extra_files)
+    packager = get_scene_packager(scene, settings, extra_files)
     return packager.run(overwrite=overwrite, mode=mode)
 
 
-def package_scenes(scenes, config_keys, extra_files=None, overwrite=False,
+def package_scenes(scenes, settings, extra_files=None, overwrite=False,
                    mode=False):
     """
     Create packager and run for each scene
@@ -160,7 +160,7 @@ def package_scenes(scenes, config_keys, extra_files=None, overwrite=False,
     for scene in scenes:
         try:
             ids.append(
-                package_scene(scene, config_keys, extra_files,
+                package_scene(scene, settings, extra_files,
                               overwrite=overwrite, mode=mode)
             )
         except ValueError as e:
