@@ -125,30 +125,35 @@ def _init_backup_config():
                 getattr(scene_packager_config, member))
 
 
-def get_scene_packager(scene, settings, extra_files=None):
+def get_scene_packager(scene, package_root=None, extra_files=None, verbose=0):
     """
     Get scene packager for a scene
     """
     packager = packagers.base_packager.Packager(scene,
-                                                settings,
-                                                extra_files)
+                                                package_root=package_root,
+                                                extra_files=extra_files,
+                                                verbose=verbose)
     return packager
 
 
-def package_scene(scene, settings, extra_files=None, overwrite=False,
-                  mode=False):
+def package_scene(scene, package_root=None, extra_files=None, overwrite=False,
+                  mode=False, verbose=0):
     """
     Package the given scene path
     """
     if not os.path.isfile(scene):
         raise ValueError("Scene does not exist! {0}".format(scene))
 
-    packager = get_scene_packager(scene, settings, extra_files)
+    packager = get_scene_packager(scene,
+                                  package_root=package_root,
+                                  extra_files=extra_files,
+                                  verbose=verbose)
+
     return packager.run(overwrite=overwrite, mode=mode)
 
 
-def package_scenes(scenes, settings, extra_files=None, overwrite=False,
-                   mode=False):
+def package_scenes(scenes, package_root=None, extra_files=None, overwrite=False,
+                   mode=False, verbose=0):
     """
     Create packager and run for each scene
 
@@ -160,8 +165,12 @@ def package_scenes(scenes, settings, extra_files=None, overwrite=False,
     for scene in scenes:
         try:
             ids.append(
-                package_scene(scene, settings, extra_files,
-                              overwrite=overwrite, mode=mode)
+                package_scene(scene,
+                              package_root=package_root,
+                              extra_files=extra_files,
+                              overwrite=overwrite,
+                              mode=mode,
+                              verbose=verbose)
             )
         except ValueError as e:
             tb_message = "".join(traceback.format_exception(type(e), e, None))

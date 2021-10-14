@@ -17,15 +17,15 @@ class Packager(object):
     Args:
         scene (str): Scene filepath
     """
-    def __init__(self, scene, settings, extra_files=None):
+    def __init__(self, scene, package_root=None, extra_files=None, verbose=0):
 
         if not os.path.exists(scene):
             raise ValueError("Scene does not exist!")
 
         # Log
-        self.log = utils.get_logger(__name__, settings.get("verbose", 0))
+        self.log = utils.get_logger(__name__, verbose)
         # Set log verbosity
-        self.set_verbosity(settings.get("verbose", 0))
+        self.set_verbosity(verbose)
 
         # Mode
         # Available levels:
@@ -39,7 +39,6 @@ class Packager(object):
         self.mode = 0
 
         self.scene = None
-        self.settings = {}
         self.extra_files = None
 
         # Scene attrs
@@ -61,7 +60,9 @@ class Packager(object):
         self.exclude_node_files = []
 
         # Source scene
-        self.set_scene_file(scene, settings, extra_files)
+        self.set_scene_file(
+            scene, package_root=package_root, extra_files=extra_files
+        )
 
     def _init_settings(self, settings):
         """
@@ -119,7 +120,7 @@ class Packager(object):
 
         return self.settings
 
-    def set_scene_file(self, scene, settings=None, extra_files=None):
+    def set_scene_file(self, scene, package_root=None, extra_files=None):
         """
         Set scene file for package
         """
@@ -134,7 +135,11 @@ class Packager(object):
         self.scene = scene
 
         # Initialize package settings
-        self._init_settings(settings or {})
+        settings = {}
+        if package_root:
+            settings = {"package_root": package_root}
+
+        self._init_settings(settings)
 
         # Extra files
         if extra_files is not None:
@@ -265,40 +270,6 @@ class Packager(object):
         TODO get old comment
         """
         return self.settings["use_relative_paths"]
-
-    def get_packaged_path(self, filepath, parent_dir):
-        """
-        Get target filepath for dependency file
-
-        Args:
-            filepath (str): Dependency filepath
-            parent_dir (str): Package dependency subdir
-
-        Returns:
-            Filepath str
-        """
-        # Check for rename format pattern
-        patterns = self.settings.get("rename_patterns", [])
-        renamed = utils.get_renamed_dst_path(utils.clean_path(filepath),
-                                             patterns)
-        # Rename matched
-        if renamed:
-            # Rename has extra dir already
-            if os.path.dirname(renamed):
-                return utils.clean_path(os.path.join(parent_dir, renamed))
-            # Rename is filename only
-            # Add filename dir
-            else:
-                return utils.clean_path(
-                    os.path.join(
-                        parent_dir,
-                        os.path.splitext(os.path.basename(renamed))[0],
-                        renamed
-                    )
-                )
-
-        # Get basic packaged path
-        return utils.basic_package_dst_path(filepath, parent_dir)
 
     def get_filecopy_metadata(self, reload=False):
         """

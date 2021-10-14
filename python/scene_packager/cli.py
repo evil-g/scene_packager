@@ -232,8 +232,10 @@ def main():
     # Package immediately
     else:
         LOG.info("Packaging {} scenes...".format(len(files)))
+
         api.package_scenes(files,
-                           vars(opts),
+                           package_root=opts.package_root,
                            extra_files=opts.extra_files,
                            overwrite=opts.overwrite,
-                           mode=mode)
+                           mode=mode,
+                           verbose=opts.verbose)
