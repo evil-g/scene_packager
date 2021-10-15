@@ -277,7 +277,7 @@ def create_run_command(**kwargs):
         raise ValueError("nocopy and dryrun modes cannot be used together")
 
     # Assemble command
-    cmd = "scene-packager run"
+    cmd = "scene-packager run --scene {}".format(kwargs["scene"])
 
     # Input args
     if "search_path" in kwargs:
