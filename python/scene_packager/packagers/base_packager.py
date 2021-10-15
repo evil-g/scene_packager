@@ -47,7 +47,7 @@ class Packager(object):
         self.scene_end = None
         self.scene_root = None
 
-        # File copy metadata to be used by Deadline job
+        # File copy src/dst metadata
         self.filecopy_metadata = {}
 
         # File dependency data dict

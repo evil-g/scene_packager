@@ -1,6 +1,5 @@
 """
-Deadline script for basic file copy operations
-Python dependency only
+Script for basic file copy operations
 """
 # Standard imports
 import argparse
