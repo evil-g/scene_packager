@@ -7,3 +7,7 @@ from . import (
     scene_packager_config,
     utils
 )
+
+
+# Load configs on module load
+api.load_config()

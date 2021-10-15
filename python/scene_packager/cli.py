@@ -214,8 +214,7 @@ def main():
     # ----------------------------------
     # Initialize config
     # ----------------------------------
-    api._init_backup_config()
-    api._load_config_overrides(search_path=opts.search_path)
+    api.load_config(search_path=opts.search_path)
 
     # Dryrun level
     if opts.dryrun:

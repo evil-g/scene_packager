@@ -115,14 +115,29 @@ def _init_backup_config():
     """
     Make backup copies of originals, with `_` prefix
     Useful for augmenting an existing value with your own config
-    """
 
+    Returns: None
+    """
     for member in dir(scene_packager_config):
         if member.startswith("__"):
             continue
 
         setattr(scene_packager_config, "_%s" % member,
                 getattr(scene_packager_config, member))
+
+
+def load_config(search_path=None, print_info=False):
+    """
+    Set up scene packager config
+
+    Args:
+        search_path (str): Scene packager config search path
+        debug (bool): If True, print debug info about config assembly
+
+    Returns: None
+    """
+    _init_backup_config()
+    _load_config_overrides(search_path=search_path, print_info=print_info)
 
 
 def get_scene_packager(scene, package_root=None, extra_files=None, verbose=0):
