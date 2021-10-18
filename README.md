@@ -75,31 +75,32 @@ optional arguments:
 ### Command examples:
 Package a nuke script (overwrite existing)
 ```
-scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite -v
+$ scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite -v
 ```
 
 Only writes out packaged scene with updated paths and metadata (skips copying file dependencies)
 ```
-scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --no-copy
+$ scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --no-copy
 ```
 
 Dryrun with max log output
-```scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --dryrun -vv
+```
+$ scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --dryrun -vv
 ```
 
 Print config override information
 ```
-scene-packager inspect --config
+$ scene-packager inspect --config
 ```
 
 Print package information under directory
 ```
-scene-packager inspect --dir /projects/test/delivery/scene_packager
+$ scene-packager inspect --dir /projects/test/delivery/scene_packager
 ```
 
 Print config + package information and open the root directory of each package
 ```
-scene-packager inspect --dir /projects/test/delivery/scene_packager
+$ scene-packager inspect --dir /projects/test/delivery/scene_packager
 --open-root-dir --config
 ```
 
