@@ -73,10 +73,12 @@ optional arguments:
                         scene/user/date, -vv to print all package metadata.
 ```
 ### Command examples:
-Package a nuke script (overwrite existing).
-`scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite -v`
+Package a nuke script (overwrite existing)
+```
+scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite -v
+```
 
-Only writes packaged scene with updated paths (skips copying file dependencies).
+Only writes out packaged scene with updated paths and metadata (skips copying file dependencies)
 ```
 scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --no-copy
 ```
