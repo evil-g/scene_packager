@@ -31,7 +31,10 @@ def _get_config_paths(search_path=None, print_info=False):
         log = utils.get_logger("scene_packager.api")
 
     search_path = search_path or os.environ["SCENE_PACKAGER_CONFIG_PATH"]
-    log.info("Config search path: {}".format(utils.clean_path(search_path)))
+    log.info("Config search path:")
+    for sp in utils.clean_path(search_path).split(os.pathsep):
+        log.info("{}".format(sp))
+    log.newline()
 
     paths = []
     for search_dir in search_path.split(";"):
