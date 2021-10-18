@@ -9,10 +9,11 @@ TODO
 SCENE_PACKAGER_CONFIG_PATH
 ## Usage
 ### Mode: run
-Package a scene file under an input root directory.
+Run mode will package a scene file and its file dependencies under a single directory.
 Uses config implementations found in $SCENE_PACKAGER_CONFIG_PATH.
 
-```$ scene-packager run --help
+```
+$ scene-packager run --help
 usage: scene-packager run [-h] -s INPUT_SCENE [--search-path SEARCH_PATH]
                           [-r PACKAGE_ROOT]
                           [--extra-files EXTRA_FILES [EXTRA_FILES ...]]
@@ -54,7 +55,8 @@ Inspect mode lets you:
 1. Print information about packages under an input directory.
 2. Print information about the config and any active overrides.
 
-```$ scene-packager inspect --help
+```
+$ scene-packager inspect --help
 usage: scene-packager inspect [-h] [--config] [--search-path SEARCH_PATH]
                               [--dir INSPECT_DIR] [-r] [-s] [-v]
 
@@ -70,19 +72,34 @@ optional arguments:
   -v, --verbose         Print info about found packages. Use -v to print
                         scene/user/date, -vv to print all package metadata.
 ```
-###Command examples:
+### Command examples:
 Package a nuke script (overwrite existing).
 `scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite -v`
 
 Only writes packaged scene with updated paths (skips copying file dependencies).
-`scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --no-copy`
+```
+scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --no-copy
+```
 
 Dryrun with max log output
-`scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --dryrun -vv`
-`scene-packager inspect --config`
-`scene-packager inspect --dir /projects/test/delivery/scene_packager`
-`scene-packager inspect --dir /projects/test/delivery/scene_packager`
-`scene-packager inspect --dir /projects/test/delivery/scene_packager --open-root-dir`
+```scene-packager run -s /projects/test/shots/001/my_test_script_v001.nk --overwrite --dryrun -vv
+```
+
+Print config override information
+```
+scene-packager inspect --config
+```
+
+Print package information under directory
+```
+scene-packager inspect --dir /projects/test/delivery/scene_packager
+```
+
+Print config + package information and open the root directory of each package
+```
+scene-packager inspect --dir /projects/test/delivery/scene_packager
+--open-root-dir --config
+```
 
 ## Config
 TODO
