@@ -1,7 +1,7 @@
 # Scene Packager
 ## Overview
 The scene packager consolidates a scene and its file dependencies under a single directory.
-The packaged scene file is updated to
+It copies file dependencies to a new package parent directory, and updates the packaged scene file to reference the new dependency paths.
 ## Setup
 ### Installation
 TODO
