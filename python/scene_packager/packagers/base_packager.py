@@ -49,6 +49,7 @@ class Packager(object):
 
         # File copy src/dst metadata
         self.filecopy_metadata = {}
+        self.extracopy_metadata = {}
 
         # File dependency data dict
         self.dep_data = {}
@@ -320,11 +321,15 @@ class Packager(object):
             }
 
         # Add extra files
-        for src_glob, dst in self.settings.get("extra_files", {}).items():
+        for src_glob in self.extra_files:
             if self.log.level == logging.DEBUG:
                 self.log.newline()
 
-            # Glob style for dst
+            # Get dest dir for extra files
+            dst = scene_packager_config.get_extra_packaged_path(
+                src_glob, self.package_root
+            )
+            # Glob style
             dst_glob = utils.get_frame_glob_path(dst)
             self.log.debug("Extra file sequence: {}".format(dst_glob))
 

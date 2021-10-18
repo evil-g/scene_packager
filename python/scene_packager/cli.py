@@ -47,12 +47,6 @@ def main():
         )
     )
 
-    # UI mode
-    parser_run.add_argument(
-        "--ui", dest="ui", action="store_true",
-        help=("Launch Scene Packager ui.")
-    )
-
     # Packager overrides
     parser_run.add_argument(
         "--search-path", dest="search_path", type=str, help=(
@@ -66,27 +60,16 @@ def main():
 
     # Extra files
     parser_run.add_argument(
-        "--extra-files", dest="extra_files", type=list,
-        help=("List of extra files to copy to the final package. Useful for "
-              "adding references files that may not be used by the scene. ")
-    )
-    # Extra files dest copy dir
-    parser_run.add_argument(
-        "--extra-subdir", dest="extra_subdir", type=str,
-        help=(
-            "Subdir to package extra files under. Eg: 'reference_images', etc."
-        )
-    )
-
-    # Overwrite existing
-    parser_run.add_argument(
-        "-o", "--overwrite", dest="overwrite", action="store_true",
-        help=(
-            "If target package destination is already a package, overwrite it."
-        )
+        "--extra-files", dest="extra_files", nargs="+",
+        help=("List of extra filepaths to copy to the final package. Useful "
+              "for adding references files that are not used by the scene.  ")
     )
 
     # Testing modes
+    parser_run.add_argument(
+        "--dryrun", dest="dryrun", action="store_true",
+        help=("Dryrun mode. Prints info and source/dest file dependencies.")
+    )
     parser_run.add_argument(
         "--nocopy", dest="nocopy", action="store_true",
         help=("Runs packager without packaging the file dependencies. "
@@ -94,9 +77,17 @@ def main():
               "Prints a log of source/dest paths for file "
               "dependencies, but does not actually copy them.")
     )
+    # Overwrite existing
     parser_run.add_argument(
-        "--dryrun", dest="dryrun", action="store_true",
-        help=("Dryrun mode. Prints info and source/dest file dependencies.")
+        "-o", "--overwrite", dest="overwrite", action="store_true",
+        help=(
+            "If target package destination is already a package, overwrite it."
+        )
+    )
+    # UI mode
+    parser_run.add_argument(
+        "--ui", dest="ui", action="store_true",
+        help=("Launch Scene Packager ui.")
     )
     # Verbosity
     parser_run.add_argument(

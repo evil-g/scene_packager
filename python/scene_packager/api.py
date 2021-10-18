@@ -273,7 +273,9 @@ def create_run_command(**kwargs):
 
     Args:
         dryrun (bool): If True, dryrun mode
-        extra_files (dict): Extra files to copy to packager
+        extra_files (list or str): Extra files to copy to packager
+                                   Either list of file paths or
+                                   " " joined str of filepaths
         nocopy (bool): If True, nocopy mode
         overwrite (bool): If True, overwrite
         package_root (str): Package root dir
@@ -302,7 +304,10 @@ def create_run_command(**kwargs):
         cmd += " --package-root {}".format(kwargs["package_root"])
 
     if "extra_files" in kwargs:
-        cmd += " --extra-files {}".format(kwargs["extra_files"])
+        ex = kwargs["extra_files"]
+        if isinstance(kwargs["extra_files"], list):
+            ex = " ".join(kwargs["extra_files"])
+        cmd += " --extra-files {}".format(ex)
 
     # Boolean flags
     if kwargs.get("overwrite", False):

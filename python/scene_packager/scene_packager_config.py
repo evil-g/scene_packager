@@ -160,6 +160,18 @@ def get_packaged_path(filepath, parent_dir):
     return scene_packager.utils.basic_package_dst_path(filepath, parent_dir)
 
 
+def get_extra_packaged_path(filepath, package_root):
+    """
+    Get packaged path for extra input files
+
+    Args:
+        filepath (str): Input file path
+        package_root (str): Parent dir
+    """
+    subdir = os.path.join(package_root, "reference")
+    return scene_packager.utils.basic_package_dst_path(filepath, subdir)
+
+
 # -------------------------------------------------------
 # *** Must be implemented per-DCC ***
 # *** Nuke implementation: scene_packager/nuke/scene_packager_config.py ***
