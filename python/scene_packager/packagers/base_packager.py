@@ -101,9 +101,11 @@ class Packager(object):
         self.settings["use_relative_paths"] = \
             scene_packager_config.use_relative_paths()
 
-        self.settings["project_dir"] = scene_packager_config.project_directory(
-            self.packaged_scene, self.package_root, self.scene
-        )
+        self.settings["project_directory"] = \
+            scene_packager_config.project_directory(self.packaged_scene,
+                                                    self.package_root,
+                                                    self.scene)
+        self.log.error("PROJECT DIR: {}".format(self.project_directory))
 
         start, end = scene_packager_config.get_scene_frange(self.scene)
         self.settings["start"] = start
@@ -246,8 +248,8 @@ class Packager(object):
         return self.settings["filecopy_metadata_path"]
 
     @property
-    def project_dir(self):
-        return self.settings["project_dir"]
+    def project_directory(self):
+        return self.settings["project_directory"]
 
     @property
     def use_frame_limit(self):
@@ -466,7 +468,7 @@ class Packager(object):
             self.packaged_scene,
             self.dep_data,
             self.root,
-            self.project_dir,
+            self.project_directory,
             self.scene_start,
             self.scene_end,
             relative_paths=self.use_relative_paths

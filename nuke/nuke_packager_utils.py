@@ -174,11 +174,21 @@ def clean_root(root_data, pdir, start, end):
     raw_root_data = r"{0}".format(root_data)
 
     inserted = raw_root_data
+
+    # Check project directory
+    if "project_directory" in inserted:
+        parsed_root = ParsedNode(root_data)
+        # If project directory setting is empty, remove it
+        if not parsed_root.knob_value("project_directory"):
+            print("no project directory set")
+            inserted = re.sub("(^| +)project_directory.*\n", "", inserted)
+
+    # Add project directory
     if "project_directory" not in inserted:
-        match = re.search("Root \{\n", inserted)
-        if match:
-            before = inserted[0:match.end()]
-            after = inserted[match.end():]
+        pdir_match = re.search("Root \{\n", inserted)
+        if pdir_match:
+            before = inserted[0:pdir_match.end()]
+            after = inserted[pdir_match.end():]
             try:
                 inserted = r"%s" % before + \
                     r"%s" % pdir + \
@@ -188,23 +198,23 @@ def clean_root(root_data, pdir, start, end):
 
     # Root start
     if "first_frame" not in inserted:
-        match = re.search("Root \{\n", inserted)
-        if match:
+        first_match = re.search("Root \{\n", inserted)
+        if first_match:
             first_frame = " first_frame {0}\n".format(start)
 
-            before = inserted[0:match.end()]
-            after = inserted[match.end():]
+            before = inserted[0:first_match.end()]
+            after = inserted[first_match.end():]
             inserted = r"%s" % before + \
                 r"%s" % first_frame + \
                 r"%s" % after
 
     # Root end
     if "last_frame" not in inserted:
-        match = re.search("Root \{\n", inserted)
-        if match:
+        last_match = re.search("Root \{\n", inserted)
+        if last_match:
             last_frame = " last_frame {0}\n".format(end)
-            before = inserted[0:match.end()]
-            after = inserted[match.end():]
+            before = inserted[0:last_match.end()]
+            after = inserted[last_match.end():]
             inserted = r"%s" % before + \
                 r"%s" % last_frame + \
                 r"%s" % after
@@ -252,7 +262,12 @@ class ParsedNode(object):
         if knob_name not in self.knobs:
             raise KeyError("No knob called: {0}".format(knob_name))
 
-        return self.knobs[knob_name]
+        value = self.knobs[knob_name]
+        # Clean empty str settings
+        if value in ["''", '""']:
+            return ""
+        else:
+            return value
 
     def files(self):
         """
