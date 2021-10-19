@@ -89,6 +89,9 @@ def get_scene_frange(scene):
         log.info("Start: {} | End: {}".format(start, end))
         return start, end
 
+    log.error("{} root nodes".format(len(roots)))
+    for root in roots:
+        log.error(root.data)
     raise RuntimeError("Could not figure out scene start/end. [Check whether "
                        "Root node has first_frame/last_frame set]")
 
@@ -217,7 +220,7 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
     log.info("relative paths={}".format(relative_paths))
 
     # Load backup scene text
-    with open(source_scene, "r") as handle:
+    with open(source_scene, "r", encoding="utf8") as handle:
         scene_data = handle.read()
 
     raw_scene_data = r"{0}".format(scene_data)
@@ -260,7 +263,7 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
 
     # Write
     scene_packager.utils.make_dirs(os.path.dirname(dst_scene))
-    with open(dst_scene, "w") as handle:
+    with open(dst_scene, "w", encoding="utf8") as handle:
         if isinstance(raw_scene_data, bytes):
             handle.write(raw_scene_data.decode("utf8"))
         else:

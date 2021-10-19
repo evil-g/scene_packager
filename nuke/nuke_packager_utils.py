@@ -155,7 +155,7 @@ def parse_nodes(scene):
 
     # Load data
     data = ""
-    with open(scene, "r") as handle:
+    with open(scene, "r", encoding="utf8") as handle:
         data = handle.readlines()
 
     # Parse nodes from script
@@ -180,7 +180,6 @@ def clean_root(root_data, pdir, start, end):
         parsed_root = ParsedNode(root_data)
         # If project directory setting is empty, remove it
         if not parsed_root.knob_value("project_directory"):
-            print("no project directory set")
             inserted = re.sub("(^| +)project_directory.*\n", "", inserted)
 
     # Add project directory

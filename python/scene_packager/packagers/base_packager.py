@@ -39,7 +39,7 @@ class Packager(object):
         self.mode = 0
 
         self.scene = None
-        self.extra_files = None
+        self.extra_files = []
 
         # Scene attrs
         # Script start/end
@@ -149,7 +149,7 @@ class Packager(object):
             self.extra_files = extra_files
 
         # Load file text
-        with open(self.scene, "r") as handle:
+        with open(self.scene, "r", encoding="utf8") as handle:
             self._scene_txt = handle.read()
 
     def set_mode(self, mode):
