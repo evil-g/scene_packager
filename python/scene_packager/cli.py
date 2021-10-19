@@ -188,19 +188,17 @@ def main():
     # No scenes
     if not files:
         raise RuntimeError("No input scenes found.")
-    # Multiple scenes
-    elif len(files) > 1:
-        # No root override allowed with multiple files
-        if opts.package_root:
-            raise RuntimeError(
-                "Cannot use --package-root when packaging multiple files. "
-                "Update the config .py if you need to adjust the package root."
-            )
-
-        # TODO User input required
-        LOG.info("Continue packaging {} scene files?".format(len(files)))
-
-    # TODO extra files subdir
+    # TODO
+    # # Multiple scenes
+    # elif len(files) > 1:
+    #     # No root override allowed with multiple files
+    #     if opts.package_root:
+    #         raise RuntimeError(
+    #             "Cannot use --package-root when packaging multiple files. "
+    #             "Update the config .py if you need to adjust the package root."
+    #         )
+    #     # TODO User input required
+    #     LOG.info("Continue packaging {} scene files?".format(len(files)))
 
     # ----------------------------------
     # Initialize config

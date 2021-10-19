@@ -276,7 +276,12 @@ def basic_package_dst_path(src_path, dst_dir):
     # If no version dir, use subdir named after file
     # Remove frame pad (#### or %04d style only)
     base = os.path.splitext(os.path.basename(src_path))[0]
-    subdir = re.sub(FRAME_PAD_FMT_REGEX, "", base)
+    # Glob style
+    if "*" == base:
+        subdir = ""
+    else:
+        subdir = re.sub(FRAME_PAD_FMT_REGEX, "", base)
+
     return clean_path(
         os.path.join(dst_dir, subdir, os.path.basename(src_path)))
 

@@ -65,9 +65,9 @@ def get_node_subdir(node):
         dir str
     """
     if node.Class() in ["DeepWrite", "Write"]:
-        return "images/outputs/{}".format(node.knob_value("name"))
+        return "images/outputs"
 
-    return "images/inputs/{}".format(node.knob_value("name"))
+    return "images/inputs"
 
 
 def get_node_file_knobs(node_class):

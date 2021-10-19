@@ -325,13 +325,18 @@ class Packager(object):
             if self.log.level == logging.DEBUG:
                 self.log.newline()
 
+            # Glob style source/dst for each node
+            self.log.debug("{:24}: {}".format("Extra frame sequence",
+                                              src_glob))
+
             # Get dest dir for extra files
             dst = scene_packager_config.get_extra_packaged_path(
                 src_glob, self.package_root
             )
             # Glob style
             dst_glob = utils.get_frame_glob_path(dst)
-            self.log.debug("Extra file sequence: {}".format(dst_glob))
+            self.log.debug("{:24}: {}".format("Packaged frame sequence",
+                                              dst_glob))
 
             # Update metadata
             if src_glob in to_copy:

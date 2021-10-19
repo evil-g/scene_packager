@@ -127,9 +127,9 @@ def load_scene_data(packaged_scene, package_root, source_scene):
                 # Get target file path
                 dst = scene_packager.scene_packager_config.get_packaged_path(
                     file,
-                    os.path.join(
-                        package_root, utils.get_node_subdir(node)
-                    )
+                    os.path.join(package_root,
+                                 utils.get_node_subdir(node),
+                                 node.knob_value("name"))
                 )
                 rel = ""
                 if scene_packager.scene_packager_config.use_relative_paths():
@@ -152,17 +152,6 @@ def load_scene_data(packaged_scene, package_root, source_scene):
                 curr_start = None
                 curr_end = None
                 if file in dep_data:
-                    # # Check
-                    # log.info("packaged_path: {}".format(dst))
-                    # print("packaged_path: {}".format(dst))
-                    # print("dep_data path: {}".format(dep_data[file]["packaged_path"]))
-                    # assert(dep_data[file]["packaged_path"] == dst)
-                    # if rel:
-                    #     log.info("relative_path: {}".format(rel))
-                    #     print("relative_path: {}".format(rel))
-                    #     print("dep_data path: {}".format(dep_data[file]["packaged_path"]))
-                    #     assert(dep_data[file]["relative_path"] == rel)
-
                     curr_start = dep_data[file].get("start")
                     curr_end = dep_data[file].get("end")
                     # Start frame
