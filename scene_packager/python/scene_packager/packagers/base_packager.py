@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Standard
+import io
 import logging
 import os
 import pprint
@@ -148,7 +149,7 @@ class Packager(object):
             self.extra_files = extra_files
 
         # Load file text
-        with open(self.scene, "r", encoding="utf8") as handle:
+        with io.open(self.scene, "r", encoding="utf8") as handle:
             self._scene_txt = handle.read()
 
     def set_mode(self, mode):

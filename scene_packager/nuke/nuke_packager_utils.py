@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Standard
+import io
 import os
 import re
 
@@ -155,7 +156,7 @@ def parse_nodes(scene):
 
     # Load data
     data = ""
-    with open(scene, "r", encoding="utf8") as handle:
+    with io.open(scene, "r", encoding="utf8") as handle:
         data = handle.readlines()
 
     # Parse nodes from script
