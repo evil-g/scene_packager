@@ -105,7 +105,6 @@ class Packager(object):
             scene_packager_config.project_directory(self.packaged_scene,
                                                     self.package_root,
                                                     self.scene)
-        self.log.error("PROJECT DIR: {}".format(self.project_directory))
 
         start, end = scene_packager_config.get_scene_frange(self.scene)
         self.settings["start"] = start
