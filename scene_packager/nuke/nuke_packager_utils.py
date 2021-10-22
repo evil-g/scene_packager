@@ -171,10 +171,7 @@ def clean_root(root_data, pdir, start, end):
     """
     Clean root node and make sure project directory is set
     """
-    # Sub new files
-    raw_root_data = r"{0}".format(root_data)
-
-    inserted = raw_root_data
+    inserted = root_data
 
     # Check project directory
     if "project_directory" in inserted:

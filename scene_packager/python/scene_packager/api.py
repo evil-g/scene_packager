@@ -195,6 +195,7 @@ def package_scenes(scenes, package_root=None, extra_files=None, overwrite=False,
             if tb_message.startswith("Scene does not exist"):
                 dne.append(scene)
             else:
+                LOG.error(tb_message, exc_info=True)
                 raise e
 
     if dne:

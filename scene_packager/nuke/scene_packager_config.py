@@ -222,9 +222,7 @@ def write_packaged_scene(source_scene, dst_scene, dep_data, root,
 
     # Load backup scene text
     with io.open(source_scene, "r", encoding="utf8") as handle:
-        scene_data = handle.read()
-
-    raw_scene_data = r"{0}".format(scene_data)
+        raw_scene_data = handle.read()
 
     # Clean root
     new_root = utils.clean_root(
