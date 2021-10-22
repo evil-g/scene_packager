@@ -26,6 +26,11 @@ def parse_args():
                         action="store_true",
                         default=False,
                         dest="force")
+    parser.add_argument(
+        "-v", "--verbose", dest="verbose", action="count", default=0,
+        help=("Increase verbosity. Use -v for basic info,"
+              "-vv for debug messages.")
+    )
 
     return parser.parse_args()
 
@@ -275,8 +280,16 @@ def main():
     with open(metadata, mode="rb") as handle:
         data = json.load(handle)
 
+    # Verbosity
+    if args.verbose > 1:
+        log_level = logging.DEBUG
+    elif 1 == args.verbose:
+        log_level = logging.INFO
+    else:
+        log_level = logging.WARNING
+
     # Run
-    copy_files(data, force=force)
+    copy_files(data, force=force, log_level=log_level)
 
 
 if "__main__" == __name__:
