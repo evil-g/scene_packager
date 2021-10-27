@@ -565,8 +565,8 @@ class Packager(object):
         # Already exists
         if not avail and not overwrite:
             raise RuntimeError(
-                "Package already exists at: {0}\nUse --overwrite flag to "
-                "force overwrite.".format(self.package_root)
+                "Package already exists at: {0}\nUse --overwrite/overwrite="
+                "True to force overwrite.".format(self.package_root)
             )
         # Remove existing (skip on dryrun/mode 2)
         elif (not avail) and overwrite and self.mode < 2:
